@@ -5,12 +5,16 @@ import { add, ell, box, cyl, cone, eye, BL } from '../kit.js';
 const PI = Math.PI;
 
 // hat: [dx, dy, scale], face: [dx, dy] — 동물마다 머리 모양이 달라 악세사리 위치를 보정한다
+// perk: 라이더마다 다른 특성. apply(S)가 전투 수치를 바꾼다.
 export const RIDERS = [
-  { id: 'duck', label: '오리', body: 0xfdf6e3, hat: [0, 0, 1], face: [0, 0], def: { hat: 'helmet', face: 'none', neck: 'none' } },
-  { id: 'frog', label: '개구리', body: 0x6cc24a, hat: [-0.07, 0.05, 0.8], face: [-0.05, 0.21], topEyes: true, def: { hat: 'headband', face: 'none', neck: 'none' } },
-  { id: 'cat', label: '고양이', body: 0xf3a23c, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'goggles', neck: 'scarf' } },
-  { id: 'dog', label: '강아지', body: 0xe8c9a0, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'none', neck: 'bell' } },
-  { id: 'hamster', label: '햄스터', body: 0xf7c98b, hat: [0, 0, 1], face: [0, 0], def: { hat: 'hardhat', face: 'none', neck: 'none' } },
+  { id: 'duck', label: '오리', body: 0xfdf6e3, hat: [0, 0, 1], face: [0, 0], def: { hat: 'helmet', face: 'none', neck: 'none' }, perk: '연사 속도 +10%', apply: S => { S.fireCd *= 0.9; } },
+  { id: 'frog', label: '개구리', body: 0x6cc24a, hat: [-0.07, 0.05, 0.8], face: [-0.05, 0.21], topEyes: true, def: { hat: 'headband', face: 'none', neck: 'none' }, perk: '점프 높이 +25%', apply: S => { S.jump *= 1.25; } },
+  { id: 'cat', label: '고양이', body: 0xf3a23c, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'goggles', neck: 'scarf' }, perk: '치명타 확률 +10%', apply: S => { S.crit += 0.1; } },
+  { id: 'dog', label: '강아지', body: 0xe8c9a0, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'none', neck: 'bell' }, perk: '귤 끌어오기 범위 +40%', apply: S => { S.magnet *= 1.4; } },
+  { id: 'hamster', label: '햄스터', body: 0xf7c98b, hat: [0, 0, 1], face: [0, 0], def: { hat: 'hardhat', face: 'none', neck: 'none' }, perk: '스태미나 회복 +30%', apply: S => { S.stReg *= 1.3; } },
+  { id: 'rabbit', label: '토끼', body: 0xffffff, hat: [0, -0.02, 0.85], face: [0, 0], def: { hat: 'none', face: 'none', neck: 'bowtie' }, perk: '이동 속도 +10%', apply: S => { S.speed += 0.1; } },
+  { id: 'penguin', label: '펭귄', body: 0x2f3640, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'none', neck: 'scarf' }, perk: '발 구르기 대기 −30%', apply: S => { S.stompCd *= 0.7; } },
+  { id: 'raccoon', label: '너구리', body: 0x9aa0a8, hat: [0, 0, 1], face: [0, 0], def: { hat: 'none', face: 'none', neck: 'cape' }, perk: '경험치 +15%', apply: S => { S.xpMul *= 1.15; } },
 ];
 
 const RED = 0xd9523a, GOLD = 0xf2c14e;
@@ -21,24 +25,32 @@ const HATS = {
   mandarin: g => { add(g, ell(0.12, 0.1, 0.12, 0xf7931e), 0, 0.28, 0); const l = add(g, ell(0.06, 0.018, 0.035, 0x4f8a3c), 0.03, 0.39, 0); l.rotation.z = 0.4; },
   party: g => { add(g, cone(0.11, 0.28, 0xff8fab), 0, 0.33, 0); add(g, ell(0.04, 0.04, 0.04, 0xffffff), 0, 0.48, 0); },
   hardhat: g => { add(g, ell(0.22, 0.13, 0.22, 0xffd43b), 0, 0.14, 0); add(g, cyl(0.26, 0.025, 0xffd43b), 0.03, 0.12, 0); },
+  chef: g => { add(g, cyl(0.17, 0.16, 0xffffff), 0, 0.22, 0); add(g, ell(0.24, 0.14, 0.24, 0xffffff), 0, 0.36, 0); },
+  pirate: g => { add(g, ell(0.26, 0.12, 0.26, 0x23252f), 0, 0.17, 0); add(g, box(0.1, 0.2, 0.5, 0x23252f), 0.08, 0.26, 0); add(g, ell(0.05, 0.05, 0.02, 0xffffff, { flat: 1 }), 0.14, 0.27, 0); },
+  wreath: g => { for (let i = 0; i < 8; i++) { const a = i / 8 * PI * 2; add(g, ell(0.06, 0.05, 0.06, [0xff8fab, 0xffe066, 0xffffff][i % 3]), Math.cos(a) * 0.2, 0.17, Math.sin(a) * 0.2); } },
+  headphones: g => { add(g, cyl(0.25, 0.04, 0x23252f, { axis: 'x' }), 0, 0.02, 0); [1, -1].forEach(s => add(g, cyl(0.09, 0.07, 0xe03131, { axis: 'z' }), 0, 0, s * 0.24)); },
   headband: g => { add(g, cyl(0.236, 0.05, RED), 0, 0.07, 0); const k = add(g, box(0.2, 0.04, 0.05, RED), -0.3, 0.05, 0.04); k.rotation.z = 0.35; },
 };
-const FIXED_HATS = new Set(['headband']); // 머리에 딱 맞아야 해서 동물별 보정을 적용하지 않는다
+const FIXED_HATS = new Set(['headband', 'headphones']); // 머리에 딱 맞아야 해서 동물별 보정을 적용하지 않는다
 const FACES = {
   goggles: (g, strap) => { if (strap) add(g, cyl(0.236, 0.05, 0x3a2a22), 0, 0, 0); [1, -1].forEach(s => add(g, cyl(0.075, 0.06, 0x8fd3ff, { axis: 'x' }), 0.2, 0, s * 0.1)); },
   sunglasses: g => { [1, -1].forEach(s => add(g, box(0.04, 0.08, 0.13, BL), 0.225, 0, s * 0.1)); add(g, box(0.03, 0.02, 0.1, BL), 0.225, 0.02, 0); },
+  mask: g => { add(g, box(0.05, 0.11, 0.26, 0xffffff), 0.215, -0.09, 0); },
+  mustache: g => { [1, -1].forEach(s => { const m = add(g, box(0.04, 0.035, 0.12, 0x3a2a1c, { flat: 1 }), 0.232, -0.1, s * 0.07); m.rotation.x = s * 0.3; }); },
   eyepatch: (g, strap) => { add(g, box(0.04, 0.1, 0.11, BL), 0.225, 0, 0.1); if (strap) { const s = add(g, cyl(0.234, 0.02, BL), 0, 0.02, 0); s.rotation.x = 0.25; } },
 };
 const NECKS = {
   scarf: g => { add(g, ell(0.2, 0.06, 0.2, RED), 0, 0.37, 0); const t = add(g, box(0.24, 0.05, 0.08, RED), -0.24, 0.38, 0.05); t.rotation.z = -0.3; },
   bowtie: g => { [1, -1].forEach(s => add(g, box(0.04, 0.09, 0.09, RED), 0.17, 0.37, s * 0.065)); add(g, box(0.05, 0.05, 0.04, GOLD), 0.18, 0.37, 0); },
+  cape: g => { add(g, cyl(0.2, 0.04, 0x9d4edd), 0, 0.38, 0); const c = add(g, box(0.04, 0.4, 0.36, 0x9d4edd), -0.24, 0.2, 0); c.rotation.z = -0.25; },
+  medal: g => { add(g, cyl(0.2, 0.03, 0x3b5bdb), 0, 0.37, 0); add(g, cyl(0.06, 0.02, 0xf2c14e, { axis: 'x' }), 0.2, 0.28, 0); },
   bell: g => { add(g, cyl(0.2, 0.04, RED), 0, 0.37, 0); add(g, ell(0.045, 0.045, 0.045, GOLD), 0.19, 0.33, 0); },
 };
 
 export const ACCESSORIES = {
-  hat: [['none', '없음'], ['helmet', '군용 헬멧'], ['straw', '밀짚모자'], ['crown', '왕관'], ['mandarin', '귤'], ['party', '파티모자'], ['hardhat', '안전모'], ['headband', '빨간 머리띠']],
-  face: [['none', '없음'], ['goggles', '고글'], ['sunglasses', '선글라스'], ['eyepatch', '안대']],
-  neck: [['none', '없음'], ['scarf', '스카프'], ['bowtie', '나비넥타이'], ['bell', '방울 목걸이']],
+  hat: [['none', '없음'], ['helmet', '군용 헬멧'], ['straw', '밀짚모자'], ['crown', '왕관'], ['mandarin', '귤'], ['party', '파티모자'], ['hardhat', '안전모'], ['headband', '빨간 머리띠'], ['chef', '요리사 모자'], ['pirate', '해적 모자'], ['wreath', '꽃 화관'], ['headphones', '헤드폰']],
+  face: [['none', '없음'], ['goggles', '고글'], ['sunglasses', '선글라스'], ['eyepatch', '안대'], ['mask', '마스크'], ['mustache', '콧수염']],
+  neck: [['none', '없음'], ['scarf', '스카프'], ['bowtie', '나비넥타이'], ['bell', '방울 목걸이'], ['cape', '망토'], ['medal', '메달']],
 };
 
 // cfg = { animal, hat, face, neck }
@@ -71,6 +83,19 @@ export function buildRider(cfg) {
     add(h, ell(0.035, 0.03, 0.04, BL), 0.3, -0.03, 0);
     [1, -1].forEach(s => { const e = add(h, ell(0.05, 0.13, 0.08, 0x9a6a3c), -0.02, 0.04, s * 0.235); e.rotation.x = s * 0.2; });
     const tail = add(g, cyl(0.03, 0.2, c), -0.2, 0.32, 0); tail.rotation.z = 0.7;
+  } else if (t === 'rabbit') {
+    [1, -1].forEach(s => { const e = add(h, ell(0.05, 0.2, 0.07, c), -0.04, 0.34, s * 0.1); e.rotation.x = s * 0.15; add(h, ell(0.02, 0.14, 0.04, 0xffb3c6, { flat: 1 }), 0.0, 0.34, s * 0.1); });
+    add(h, ell(0.03, 0.025, 0.035, 0xff8fa3, { flat: 1 }), 0.232, -0.04, 0);
+    add(g, ell(0.08, 0.08, 0.08, c), -0.2, 0.16, 0);
+  } else if (t === 'penguin') {
+    add(g, ell(0.15, 0.16, 0.15, 0xffffff), 0.07, 0.18, 0); add(h, ell(0.14, 0.15, 0.17, 0xffffff), 0.12, -0.03, 0);
+    add(h, cone(0.05, 0.14, 0xf59a23, { axis: 'x' }), 0.28, -0.04, 0);
+    [1, -1].forEach(s => add(g, ell(0.05, 0.14, 0.03, c), 0, 0.2, s * 0.21));
+  } else if (t === 'raccoon') {
+    add(g, ell(0.15, 0.15, 0.15, 0xe9ecef), 0.06, 0.18, 0);
+    add(h, box(0.06, 0.09, 0.4, 0x343a40), 0.2, 0.0, 0); add(h, ell(0.09, 0.07, 0.1, 0xe9ecef), 0.19, -0.09, 0); add(h, ell(0.03, 0.025, 0.035, 0x1d1512), 0.275, -0.07, 0);
+    [1, -1].forEach(s => add(h, cone(0.07, 0.11, c), -0.02, 0.22, s * 0.15));
+    for (let i = 0; i < 4; i++) add(g, cyl(0.06 - i * 0.004, 0.09, i % 2 ? 0x343a40 : c), -0.22 - i * 0.03, 0.2 + i * 0.085, 0);
   } else { // hamster
     add(g, ell(0.15, 0.15, 0.15, 0xfff3df), 0.06, 0.18, 0);
     [1, -1].forEach(s => { add(h, ell(0.07, 0.07, 0.03, 0xe9a868), -0.02, 0.2, s * 0.16); add(h, ell(0.1, 0.09, 0.1, 0xfff3df), 0.13, -0.08, s * 0.12); });

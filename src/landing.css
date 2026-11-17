@@ -61,7 +61,7 @@ p{margin:0}
 kbd{font:400 1.25rem var(--display);min-width:2.4em;height:2.4em;padding:0 .6em;display:inline-grid;place-items:center;background:var(--key);color:var(--ink);border:2px solid var(--ink);border-radius:.55em;box-shadow:0 .2em 0 var(--ink)}
 kbd.wide{min-width:4.6em}
 
-.maps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(16px,1.6vw,30px)}
+.maps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,1.6vw,30px)}
 .map{display:flex;flex-direction:column;gap:.7em;min-width:0;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1.5px solid var(--line);border-radius:clamp(18px,1.5vw,30px);padding:0 0 1.3em;overflow:hidden;cursor:pointer;transition:transform .15s}
 .map:hover{border-color:var(--ink);transform:translateY(-4px)}
 .map .sky{height:clamp(110px,10vw,190px);position:relative}
@@ -79,6 +79,13 @@ kbd.wide{min-width:4.6em}
 .arms .state{font-size:.9rem;font-weight:600;white-space:nowrap;justify-content:flex-end;padding-right:0}
 .arms .state.now{color:var(--zed)}
 
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4em;max-width:900px}
+.rank li{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto auto;gap:.2em 1.2em;align-items:baseline;padding:.7em 1.1em;border-radius:.9em;background:var(--surface);border:1.5px solid var(--line)}
+.rank .no{font:400 1.5rem var(--display);color:var(--accent)}
+.rank .nm{font:400 1.3rem var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .sc{font-weight:600;font-variant-numeric:tabular-nums}
+.rank .dt{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.rank .none{display:block;color:var(--muted);background:transparent;border:0;padding:0}
 .foot{display:flex;flex-direction:column;gap:clamp(18px,2vw,34px);align-items:flex-start}
 
 @media (max-width:980px){
@@ -86,6 +93,8 @@ kbd.wide{min-width:4.6em}
   .lead{max-width:30ch}
   .cols{grid-template-columns:repeat(2,minmax(0,1fr))}
   .maps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rank li{grid-template-columns:2.4em minmax(0,1fr) auto}
+  .rank .dt{grid-column:2/-1}
   .keys{grid-template-columns:repeat(3,minmax(0,1fr))}
   .stage{aspect-ratio:4/3}
 }

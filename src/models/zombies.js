@@ -47,6 +47,18 @@ export function buildZombie(Z) {
   if (A === 'party') { const ph = add(h, cone(0.16, 0.36, 0xff8fab), -0.03, 0.46, 0); ph.rotation.z = 0.12; add(h, ell(0.05, 0.05, 0.05, 0xffffff), -0.07, 0.65, 0); }
   if (A === 'gum') add(h, ell(0.19, 0.19, 0.19, 0xff9ac2), 0.47, -0.14, 0);
   if (A === 'bunny') [1, -1].forEach(s => { const e = add(h, ell(0.06, 0.2, 0.04, 0xffb3c6), -0.02, 0.46, s * 0.13); e.rotation.x = s * 0.15; });
+  if (A === 'antenna') [1, -1].forEach(s => { const t = add(h, cyl(0.02, 0.4, 0x3b3030), 0.1, 0.48, s * 0.12); t.rotation.z = -0.4; add(h, ell(0.06, 0.06, 0.06, Z.shirt), 0.19, 0.67, s * 0.12); });
+  if (A === 'headband') { add(h, cyl(0.365, 0.07, 0xe03131), 0, 0.14, 0); const k = add(h, box(0.3, 0.06, 0.07, 0xe03131), -0.45, 0.1, 0.06); k.rotation.z = 0.4; }
+  if (A === 'puff') { add(h, ell(0.5, 0.42, 0.5, Z.puffCol), -0.03, 0.42, 0); add(h, ell(0.26, 0.24, 0.26, Z.puffCol), 0.22, 0.6, 0.2); }
+  if (A === 'hood') { add(h, ell(0.2, 0.5, 0.62, Z.hoodCol), -0.2, 0.06, 0); add(h, ell(0.1, 0.34, 0.44, 0xe8d98a), -0.14, 0.02, 0); }
+  if (A === 'towel') { add(h, box(0.5, 0.12, 0.44, 0xffffff), -0.02, 0.36, 0); add(h, box(0.5, 0.05, 0.44, 0x8ecae6), -0.02, 0.4, 0); }
+  if (A === 'beanie') { add(h, ell(0.37, 0.24, 0.37, Z.capCol), 0, 0.2, 0); add(h, cyl(0.37, 0.08, 0xffffff), 0, 0.14, 0); add(h, ell(0.09, 0.09, 0.09, 0xffffff), 0, 0.46, 0); }
+  if (A === 'snow') { add(h, cone(0.06, 0.3, 0xf7931e, { axis: 'x' }), 0.46, -0.06, 0); add(h, cyl(0.26, 0.24, 0x3b5bdb), 0, 0.4, 0); add(h, cyl(0.34, 0.03, 0x3b5bdb), 0, 0.3, 0); [0.66, 0.5, 0.34].forEach(y => add(g, ell(0.05, 0.05, 0.05, 0x3b3030), 0.26 * f, y, 0)); }
+  if (A === 'wings') [1, -1].forEach(s => { const w = add(g, box(0.06, 0.5, 0.7, 0x4a3a66), -0.15, 0.72, s * 0.6 * f); w.rotation.x = s * 0.5; add(h, cone(0.08, 0.2, 0x4a3a66), -0.02, 0.38, s * 0.2); });
+  if (A === 'bolts') { [1, -1].forEach(s => add(h, cyl(0.06, 0.16, 0xa7b1b8, { axis: 'z' }), 0, -0.12, s * 0.4)); add(h, box(0.74, 0.12, 0.74, 0x2a2a35), 0, 0.3, 0); add(h, box(0.04, 0.03, 0.3, 0x3b3030, { flat: 1 }), 0.3, 0.2, 0.1); }
+  if (A === 'witch') { add(h, cyl(0.54, 0.03, 0x2f2244), 0, 0.2, 0); const c = add(h, cone(0.26, 0.7, 0x2f2244), -0.04, 0.56, 0); c.rotation.z = 0.15; add(h, cyl(0.265, 0.06, 0xb6f09c), 0, 0.25, 0); }
+  if (A === 'ears') [1, -1].forEach(s => { add(h, cone(0.12, 0.26, Z.earCol), -0.02, 0.36, s * 0.22); add(h, ell(0.18, 0.12, 0.2, Z.earCol), 0.26, -0.1, 0); });
+  if (Z.spit) add(h, ell(0.05, 0.1, 0.16, 0x9dff7a, { flat: 1 }), 0.345, -0.18, 0); // 원거리 좀비: 초록 침이 고인 입
   if (Z.bomb) { // 폭탄 좀비: 등에 붉은 통과 불붙은 심지
     add(g, cyl(0.17, 0.42, 0xe03131), -0.27 * f, 0.6, 0); add(g, cyl(0.175, 0.06, 0xffd43b), -0.27 * f, 0.6, 0);
     add(g, cyl(0.02, 0.16, 0x3b3030), -0.27 * f, 0.88, 0); add(g, ell(0.06, 0.06, 0.06, 0xffe45c, { flat: 1 }), -0.27 * f, 0.98, 0);

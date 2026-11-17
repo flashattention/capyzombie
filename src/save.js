@@ -6,7 +6,7 @@ export const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
 
 export function defaultProfile(animal = 'duck') {
   const R = RIDERS.find(r => r.id === animal) || RIDERS[0];
-  return { name: randomName(), animal: R.id, map: 'farm', ...R.def };
+  return { name: '', animal: R.id, map: 'farm', ...R.def };
 }
 export function loadProfile() {
   try {
@@ -14,7 +14,7 @@ export function loadProfile() {
     if (p && RIDERS.some(r => r.id === p.animal)) {
       const d = defaultProfile(p.animal);
       for (const slot of Object.keys(ACCESSORIES)) if (!ACCESSORIES[slot].some(a => a[0] === p[slot])) p[slot] = d[slot];
-      p.name = String(p.name || d.name).slice(0, 12);
+      p.name = String(p.name || '').slice(0, 12);
       return p;
     }
   } catch (e) { /* 저장소를 못 쓰는 환경이면 기본값으로 시작 */ }
@@ -48,3 +48,18 @@ export function recordRun(mapId, time, kills, cleared) {
   return better;
 }
 export const fmtTime = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+
+// ── 계정: 닉네임(필수)과 랭킹용 고유 번호. 캐릭터를 바꿔도 그대로 유지된다 ──
+const AKEY = 'capyzombie.account';
+export function loadAccount() {
+  let a = null;
+  try { a = JSON.parse(localStorage.getItem(AKEY)); } catch (e) { /* 무시 */ }
+  a = a && typeof a === 'object' ? a : {};
+  if (!/^[a-z0-9-]{8,40}$/i.test(a.id || '')) a.id = (crypto.randomUUID ? crypto.randomUUID() : 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+  a.nick = String(a.nick || '').slice(0, 12);
+  return a;
+}
+export function saveAccount(a) {
+  try { localStorage.setItem(AKEY, JSON.stringify(a)); } catch (e) { /* 무시 */ }
+}
+export const validNick = s => String(s || '').trim().length >= 2;

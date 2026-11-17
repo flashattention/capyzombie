@@ -116,3 +116,27 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 @media (prefers-reduced-motion: reduce){ #banner.pop{animation:none} }
 #select #go{position:sticky;bottom:0;z-index:1;flex:none}
 #select .hint{margin-top:2px}
+
+/* ── 닉네임, 랭킹, 버프 ── */
+.req{font-size:11px;color:#fff;background:var(--red);border-radius:99px;padding:0 8px;margin-left:4px;letter-spacing:0}
+input#name:invalid,input#name.bad{border-color:var(--red)}
+#nick-msg.bad{color:var(--red);font-weight:600}
+.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:0 5px 0 var(--muted)}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:13px;text-align:left}
+.rank li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:2px 8px;align-items:baseline;padding:4px 8px;border-radius:10px;background:#fff}
+.rank li.me{background:#fff3c4}
+.rank .no{font:400 15px var(--display);color:var(--muted)}
+.rank .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .sc{font-variant-numeric:tabular-nums;font-weight:600}
+.rank .dt{grid-column:2/-1;color:var(--muted);font-size:12px}
+.rank .none{display:block;color:var(--muted);background:transparent;padding:2px 0}
+#rank-map{color:var(--ink)}
+#over-rank-note{font-size:14px}
+.over-card{max-width:440px;max-height:calc(100vh - 32px);overflow-y:auto}
+#buff{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);font:400 20px var(--display);color:var(--ink);background:var(--yellow);border:3px solid var(--ink);border-radius:99px;padding:2px 18px;white-space:nowrap;pointer-events:none}
+.skill kbd{white-space:nowrap}
+.choice.fresh{background:#e3f6ff;border-color:#1c7ed6;box-shadow:0 6px 0 #1c7ed6}
+.choice.fresh .grp{background:#1c7ed6}
+.primary:disabled{opacity:1;background:#c9b9a4;color:#fff8ea}
+#select #go{box-shadow:0 5px 0 var(--ink),0 -14px 14px 8px var(--card)}
+#select #go:disabled{box-shadow:0 5px 0 var(--muted),0 -14px 14px 8px var(--card)}

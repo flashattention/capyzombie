@@ -6,6 +6,7 @@ import { buildCapy, animateCapy } from './models/capy.js';
 import { RIDERS, buildRider } from './models/riders.js';
 import { buildZombie } from './models/zombies.js';
 import { MAPS, buildDiorama } from './maps.js';
+import { fetchTop, renderRank } from './rank.js';
 
 const $ = id => document.getElementById(id);
 const hex = n => '#' + n.toString(16).padStart(6, '0');
@@ -54,7 +55,7 @@ try {
   const turn = new T.Group(); scene.add(turn);
   const capy = buildCapy(); add(turn, capy, -1.5, 0, 0);
   let rider = null, stage = null, pop = 0;
-  const spots = [[0.9, 1.0, 0.25], [1.0, -1.35, -0.3], [2.35, -0.3, 0], [2.3, 1.35, 0.2]];
+  const spots = [[0.8, 0.9, 0.25], [0.9, -1.2, -0.3], [2.5, -0.2, 0], [1.9, 1.7, 0.2], [2.0, -1.9, -0.2], [3.0, 1.0, 0.1]];
 
   refreshRider = () => {
     if (rider) capy.userData.seat.remove(rider);
@@ -107,3 +108,13 @@ try {
 
 setMap(MAPS[0]);
 refreshRider();
+
+// ── 전체 랭킹 ──
+let rankMap = MAPS[0];
+function showRank(m) {
+  rankMap = m;
+  chips($('rank-tabs'), MAPS, () => rankMap, showRank);
+  $('rank-list').innerHTML = '<li class="none">불러오는 중…</li>';
+  fetchTop(m.id).then(top => { if (rankMap === m) renderRank($('rank-list'), top, 10); });
+}
+showRank(MAPS[0]);

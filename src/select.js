@@ -4,13 +4,15 @@ import { addLights, setShadowArea } from './kit.js';
 import { MAPS, getMap, buildDiorama } from './maps.js';
 import { buildCapy, animateCapy } from './models/capy.js';
 import { RIDERS, ACCESSORIES, buildRider } from './models/riders.js';
-import { loadProfile, saveProfile, randomName, loadProgress, saveProgress, fmtTime } from './save.js';
+import { loadProfile, saveProfile, randomName, loadProgress, saveProgress, fmtTime, loadAccount, saveAccount, validNick } from './save.js';
+import { fetchTop, renderRank } from './rank.js';
 import { initAudio, setSound, sfx } from './audio.js';
 
 const $ = id => document.getElementById(id);
 
 export function createSelect(renderer, onStart) {
-  const profile = loadProfile(), progress = loadProgress();
+  const profile = loadProfile(), progress = loadProgress(), account = loadAccount();
+  profile.name = account.nick; // 닉네임은 계정 것이라 캐릭터를 바꿔도 그대로다
   const unlockAll = location.search.includes('unlock');
   const isOpen = i => unlockAll || i === 0 || progress.cleared.includes(MAPS[i - 1].id);
   if (!isOpen(MAPS.indexOf(getMap(profile.map)))) profile.map = MAPS[0].id;
@@ -29,6 +31,9 @@ export function createSelect(renderer, onStart) {
     const best = progress.best[map.id], cleared = progress.cleared.includes(map.id);
     $('map-info').textContent = `${map.blurb} ` + (best ? `최고 기록 ${fmtTime(best.time)} · ${best.kills}마리${cleared ? ' · 클리어' : ''}` : '아직 기록이 없습니다.');
     saveProfile(profile);
+    // 전체 랭킹
+    $('rank-map').textContent = '· ' + map.name; $('rank').innerHTML = '<li class="none">불러오는 중…</li>';
+    const want = map.id; fetchTop(map.id).then(top => { if (profile.map === want) renderRank($('rank'), top, 5, account.nick); });
   }
 
   const capy = buildCapy(); turn.add(capy);
@@ -41,9 +46,16 @@ export function createSelect(renderer, onStart) {
 
   // ── UI ──
   const root = $('select'); root.hidden = false;
-  const nameEl = $('name'); nameEl.value = profile.name;
-  const onName = () => { profile.name = nameEl.value.trim().slice(0, 12); saveProfile(profile); };
-  const onDice = () => { nameEl.value = profile.name = randomName(); saveProfile(profile); };
+  const nameEl = $('name'), msgEl = $('nick-msg'), goEl = $('go'); nameEl.value = account.nick;
+  const NICK_HELP = '닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.';
+  function checkNick(warn) {
+    const ok = validNick(nameEl.value);
+    goEl.disabled = !ok; nameEl.classList.toggle('bad', !ok && warn); msgEl.classList.toggle('bad', !ok && warn);
+    msgEl.textContent = ok || !warn ? NICK_HELP : '닉네임을 2자 이상 입력해야 시작할 수 있습니다.';
+    return ok;
+  }
+  const onName = () => { account.nick = profile.name = nameEl.value.trim().slice(0, 12); saveAccount(account); saveProfile(profile); checkNick(true); };
+  const onDice = () => { nameEl.value = randomName(); onName(); };
   function chips(host, items, get, set, locked) {
     host.innerHTML = '';
     items.forEach(([id, label], i) => {
@@ -60,6 +72,7 @@ export function createSelect(renderer, onStart) {
     chips($('animals'), RIDERS.map(r => [r.id, r.label]), () => profile.animal, id => {
       if (id !== profile.animal) Object.assign(profile, { animal: id }, RIDERS.find(r => r.id === id).def);
     });
+    $('perk').textContent = '특성: ' + (RIDERS.find(r => r.id === profile.animal) || RIDERS[0]).perk;
     chips($('maps'), MAPS.map(m => [m.id, m.name]), () => profile.map, id => { profile.map = id; }, i => !isOpen(i));
     for (const slot of Object.keys(ACCESSORIES)) chips($('acc-' + slot), ACCESSORIES[slot], () => profile[slot], id => { profile[slot] = id; });
   }
@@ -69,14 +82,15 @@ export function createSelect(renderer, onStart) {
   const onSens = () => { progress.settings.sens = +sensEl.value; $('sens-val').textContent = (+sensEl.value).toFixed(1); saveProgress(progress); };
   const onSound = () => { progress.settings.sound = soundEl.checked; saveProgress(progress); initAudio(); setSound(soundEl.checked); if (soundEl.checked) sfx.level(); };
   const onGo = () => {
-    if (!profile.name) { profile.name = randomName(); }
+    if (!checkNick(true)) { nameEl.focus(); return; } // 닉네임 없이는 시작할 수 없다
     saveProfile(profile); onStart({ ...profile });
   };
   nameEl.addEventListener('input', onName);
   $('dice').addEventListener('click', onDice);
   $('go').addEventListener('click', onGo);
   sensEl.addEventListener('input', onSens); soundEl.addEventListener('change', onSound);
-  refreshMap(); render(); refreshRider();
+  refreshMap(); render(); refreshRider(); checkNick(false);
+  if (!account.nick) nameEl.focus();
 
   // ── 드래그 회전 ──
   const canvas = renderer.domElement;

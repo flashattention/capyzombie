@@ -10,7 +10,7 @@ const P = { legH: 0.36, bl: 1.05, bh: 0.6, bw: 0.64 };
 function gatling() {
   const g = new T.Group();
   add(g, box(0.42, 0.24, 0.24, W.body), -0.1, 0, 0);
-  add(g, box(0.16, 0.1, 0.3, W.dark), -0.1, 0, -0.2);
+  add(g, box(0.16, 0.1, 0.3, W.dark), -0.1, 0, 0.2);
   const spin = new T.Group(); add(g, spin, 0.1, 0, 0);
   for (let i = 0; i < 6; i++) { const a = i * PI / 3; add(spin, cyl(0.032, 0.62, W.metal, { axis: 'x' }), 0.33, Math.cos(a) * 0.075, Math.sin(a) * 0.075); }
   add(spin, cyl(0.125, 0.05, W.dark, { axis: 'x' }), 0.2, 0, 0);
@@ -24,7 +24,7 @@ function rocketPod() {
   const g = new T.Group();
   add(g, box(0.56, 0.34, 0.34, W.accent));
   add(g, box(0.08, 0.355, 0.355, W.stripe), -0.12, 0, 0);
-  add(g, box(0.16, 0.1, 0.3, W.dark), -0.1, 0, 0.2);
+  add(g, box(0.16, 0.1, 0.3, W.dark), -0.1, 0, -0.2);
   [-1, 1].forEach(y => [-1, 1].forEach(z => {
     add(g, cyl(0.065, 0.03, W.dark, { axis: 'x' }), 0.285, y * 0.085, z * 0.085);
     add(g, cone(0.05, 0.13, W.tip, { axis: 'x' }), 0.35, y * 0.085, z * 0.085);
@@ -60,8 +60,8 @@ export function buildCapy() {
   add(body, band, -0.05, 0, 0);
   [-0.4, 0.3].forEach(x => { const tr = cyl(1, 0.08, C.trim, { axis: 'x' }); tr.scale.set(p.bh * 1.05, 0.08, p.bw * 1.06); add(body, tr, x, 0, 0); });
   add(body, ell(0.3, 0.09, 0.26, C.trim), -0.05, p.bh * 1.02, 0);
-  const gat = gatling(); add(body, gat, 0.12, 0.12, p.bw + 0.2);
-  const rk = rocketPod(); add(body, rk, 0.1, 0.12, -(p.bw + 0.2));
+  const gat = gatling(); add(body, gat, 0.12, 0.12, -(p.bw + 0.2));
+  const rk = rocketPod(); add(body, rk, 0.1, 0.12, p.bw + 0.2);
   const seat = new T.Group(); add(body, seat, -0.08, p.bh * 1.04, 0);
 
   g.userData = { body, by, head: h, ears, seat, gun: gat, pod: rk, spin: gat.userData.spin, gunMuzzle: gat.userData.muzzle, rocketMuzzle: rk.userData.muzzle };
