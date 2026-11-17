@@ -1,0 +1,531 @@
+<meta charset="utf-8">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>카피좀비 스타일 시트</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* layout: 왼쪽 정렬 머리말 → 스타일별 (돌려볼 수 있는 3D 무대 + 사양 열) 4단 → 라이더 후보 표 */
+:root{
+  --bg:#eef2e8; --surface:#f9fbf4; --ink:#1c2a22; --muted:#5d6b61; --line:#cfd8c8;
+  --accent:#e8791a; --accent-ink:#ffffff; --zed:#4f8a3c;
+  --display:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141a16; --surface:#1c241f; --ink:#e9efe4; --muted:#9aa89c; --line:#2f3a32;
+  --accent:#ff9a3d; --accent-ink:#1a1206; --zed:#8fd16f; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#141a16; --surface:#1c241f; --ink:#e9efe4; --muted:#9aa89c; --line:#2f3a32;
+  --accent:#ff9a3d; --accent-ink:#1a1206; --zed:#8fd16f; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding-block:36px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(34px,6vw,56px)}
+h2{font-size:clamp(26px,4vw,36px)}
+h3{font-size:13px;font-family:var(--body);font-weight:600;letter-spacing:.06em;color:var(--muted)}
+p{margin:0}
+.intro{display:flex;flex-direction:column;gap:14px;max-width:62ch}
+.intro .lead{font-size:17px}
+.howto{color:var(--muted)}
+.howto b{color:var(--ink);font-weight:600}
+kbd{font-family:var(--body);font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 7px;white-space:nowrap}
+
+.style{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:28px;align-items:start}
+.stagecol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.stage{position:relative;aspect-ratio:16/10;max-width:100%;border-radius:22px;overflow:hidden;touch-action:pan-y;cursor:grab}
+.stage:active{cursor:grabbing}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage .hint{position:absolute;right:14px;bottom:10px;font-size:12px;color:#fff;background:rgba(20,26,22,.45);padding:2px 10px;border-radius:99px;pointer-events:none}
+.views{display:flex;flex-wrap:wrap;gap:8px}
+.views button{font:500 14px var(--body);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer}
+.views button:hover{border-color:var(--ink)}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.views button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.spec{display:flex;flex-direction:column;gap:18px;min-width:0}
+.head{display:flex;gap:14px;align-items:center}
+.code{font-family:var(--display);font-size:44px;line-height:1;width:64px;height:64px;flex:none;display:grid;place-items:center;border-radius:18px;background:var(--accent);color:var(--accent-ink)}
+.head .tag{color:var(--muted);font-size:14px}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatches i{width:34px;height:34px;border-radius:50%;border:1px solid var(--line)}
+dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px}
+dt{font-weight:600;white-space:nowrap}
+dd{margin:0;color:var(--muted)}
+dd b{color:var(--ink);font-weight:600}
+.zlist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.zlist li{display:flex;gap:8px;align-items:baseline}
+.zlist .role{font-size:12px;font-weight:600;color:var(--zed);border:1px solid currentColor;border-radius:99px;padding:0 8px;white-space:nowrap}
+
+.riders{display:flex;flex-direction:column;gap:16px}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{white-space:nowrap;font-size:13px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td:first-child{font-weight:600;white-space:nowrap}
+.pick{color:var(--accent);font-weight:600}
+.note{color:var(--muted);max-width:68ch}
+
+@media (max-width:820px){
+  .style{grid-template-columns:minmax(0,1fr)}
+  .stage{aspect-ratio:4/3}
+}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>카피좀비 스타일 시트</h1>
+    <p class="lead">카피바라와 라이더, 좀비를 네 가지 그래픽 양식으로 만든 시안입니다. 그림이 아니라 실제 게임에 쓸 방식 그대로 조립한 3D 모델이라서, 고른 그대로 구현됩니다.</p>
+    <p class="howto">무대를 <b>좌우로 끌면</b> 돌아갑니다. <b>게임 시점</b> 버튼은 뱀서류 탑뷰에서 어떻게 읽히는지 보여줍니다. 지시는 <kbd>B로 가자</kbd>처럼 한 글자면 되고, <kbd>B 스타일 + 오리 라이더 + D의 좀비 색</kbd>처럼 섞어도 됩니다.</p>
+  </header>
+
+  <main id="styles" style="display:flex;flex-direction:column;gap:64px"></main>
+
+  <section class="riders">
+    <h2>라이더(xx) 후보</h2>
+    <p class="note">각 스타일에 서로 다른 동물을 한 마리씩 태워 뒀습니다. 스타일과 동물은 따로 고를 수 있습니다.</p>
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>동물</th><th>태운 곳</th><th>캐릭터</th><th>뱀서류에서의 장단점</th></tr></thead>
+        <tbody>
+          <tr><td>오리 <span class="pick">추천</span></td><td>A</td><td>군용 헬멧을 쓴 진지한 사수. 카피바라는 무심하고 오리만 흥분해 있는 대비.</td><td>실제로 새가 카피바라 등에 올라앉는 모습과 닮아 설명이 필요 없다. 흰 몸에 주황 부리라 탑뷰에서 가장 잘 보인다.</td></tr>
+          <tr><td>고양이</td><td>B</td><td>고글과 빨간 스카프의 에이스 파일럿.</td><td>귀와 꼬리로 실루엣이 분명하다. 스킨(의상) 확장이 가장 쉽다. 다만 흔한 선택이다.</td></tr>
+          <tr><td>개구리</td><td>C</td><td>빨간 머리띠를 맨 과묵한 용병.</td><td>머리 위 눈 두 개가 위에서 잘 읽힌다. 초록이라 좀비 색과 겹치므로 좀비를 보라나 청록으로 돌려야 한다.</td></tr>
+          <tr><td>햄스터</td><td>D</td><td>안전모를 쓴 볼 빵빵한 정비병.</td><td>가장 귀엽다. 카피바라와 같은 설치류, 비슷한 갈색이라 등 위에서 묻히기 쉬워 모자 색으로 구분해야 한다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const T=THREE, PI=Math.PI;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hex=n=>'#'+n.toString(16).padStart(6,'0');
+
+/* ───────── 스타일 정의 (구현 시 이 값들을 그대로 사용) ───────── */
+const STYLES=[
+{ id:'A', kind:'low', name:'포켓 디오라마', tag:'로우폴리 · 플랫 셰이딩',
+  pitch:'면이 각져 보이는 종이접기 같은 모델에 따뜻한 흙빛 팔레트. 책상 위 미니어처를 내려다보는 느낌입니다.',
+  shade:'면 단위 플랫 셰이딩, 텍스처 없이 단색 머티리얼만 사용',
+  shape:'현실 비율에 가까운 통통한 몸, 졸린 실눈, 머리 위 귤',
+  perf:'가장 가볍습니다. 좀비 수백 마리를 인스턴싱으로 그리기 좋고 모바일에서도 여유 있습니다.',
+  bg:'linear-gradient(#bfe3e0,#f6e9c9)', light:{sky:0xfff4dc,ground:0x8a7a5a,hemi:.75,sun:.95},
+  eye:'sleepy', prop:{}, item:'mandarin',
+  capy:{fur:0xb9824f,furDark:0x8f5e38,belly:0xd9a873,nose:0x5a3a28,foot:0x5a3a28,saddle:0x3f6b5c,trim:0xf2c14e},
+  weapon:{body:0x56616b,metal:0xa7b1b8,dark:0x2f363c,accent:0xd9523a,stripe:0xfff1d6,tip:0xfff1d6},
+  rider:{type:'duck',label:'오리',body:0xfdf6e3},
+  map:{id:'farm',name:'유자 농장',ground:0x8fbf5a,soil:0x7a5a3c},
+  zombies:[
+   {name:'농부 좀비',role:'기본',skin:0x8fb86a,shirt:0xc95f4a,pants:0x4f6a8f,acc:'straw',s:1},
+   {name:'호박머리',role:'탱커',skin:0x8fb86a,headCol:0xe8862e,shirt:0x6b5a45,pants:0x4a3d30,acc:'pumpkin',s:1.45,fat:1.25},
+   {name:'꼬마 좀비',role:'러너',skin:0xa9cf7a,shirt:0xf2c14e,pants:0x7a5a3c,brain:1,s:.68}]},
+{ id:'B', kind:'toon', name:'토요일 아침 만화', tag:'셀 셰이딩 · 굵은 외곽선',
+  pitch:'명암이 3단으로 딱 끊기고 검은 외곽선이 둘러진 애니메이션 풍. 머리가 큰 2등신이라 표정이 잘 보입니다.',
+  shade:'3단 툰 램프와 뒤집힌 면 외곽선, 선명한 원색',
+  shape:'큰 머리에 짧은 다리, 반짝이는 큰 눈, 볼터치와 앞니',
+  perf:'외곽선 때문에 그리는 양이 약 2배입니다. 좀비는 외곽선을 화면 후처리 한 번으로 바꾸면 수백 마리도 가능합니다.',
+  bg:'linear-gradient(#34306b,#ff9aa2)', light:{sky:0xffffff,ground:0x6a6a9a,hemi:.6,sun:1.0},
+  eye:'big', prop:{head:1.22,legH:.3,bl:.95}, item:'flower',
+  capy:{fur:0xd98b45,furDark:0xa9612c,belly:0xf2bd7e,nose:0x5b3320,foot:0x5b3320,saddle:0x3b5bdb,trim:0xffd43b,blush:0xff8fa3,teeth:1},
+  weapon:{body:0x6c7a89,metal:0xcfd8e0,dark:0x2a2f3a,accent:0xff4d4d,stripe:0xffffff,tip:0xffd43b},
+  rider:{type:'cat',label:'고양이',body:0xf3a23c},
+  map:{id:'city',name:'네온 도심',ground:0x4a4e68,soil:0x2e3048},
+  zombies:[
+   {name:'회사원 좀비',role:'기본',skin:0x7ee081,shirt:0xf1f3f5,pants:0x364fc7,acc:'tie',brain:1,s:1},
+   {name:'공사장 반장',role:'탱커',skin:0x69c96c,shirt:0xff922b,pants:0x495057,acc:'hardhat',s:1.45,fat:1.3},
+   {name:'배달 러너',role:'러너',skin:0x9af09c,shirt:0x20c997,pants:0x343a40,acc:'cap',capCol:0xff4d4d,s:.7}]},
+{ id:'C', kind:'vox', name:'블록 여단', tag:'복셀 · 픽셀 감성',
+  pitch:'전부 상자로만 쌓은 블록 장난감. 네모난 카피바라 얼굴이 원래 생김새와 잘 맞아 떨어집니다.',
+  shade:'단색 램버트 셰이딩, 상자 지오메트리만 사용',
+  shape:'모든 부위가 직육면체, 픽셀 눈, 각진 무기',
+  perf:'정점 수가 가장 적어 물량전에 유리합니다. 죽을 때 블록으로 흩어지는 연출을 만들기 쉽습니다.',
+  bg:'linear-gradient(#8fd0ff,#ffe9a8)', light:{sky:0xffffff,ground:0xb89a6a,hemi:.7,sun:.9},
+  eye:'pixel', prop:{}, item:null,
+  capy:{fur:0xb5763f,furDark:0x8a552b,belly:0xd6a066,nose:0x4a2d1c,foot:0x4a2d1c,saddle:0xb23a48,trim:0xfcbf49},
+  weapon:{body:0x5c6770,metal:0x9aa5ad,dark:0x2b3035,accent:0x2a9d8f,stripe:0xfcbf49,tip:0xe63946},
+  rider:{type:'frog',label:'개구리',body:0x6cc24a},
+  map:{id:'desert',name:'사막 유적',ground:0xe3c27a,soil:0xb8904f},
+  zombies:[
+   {name:'미라 좀비',role:'기본',skin:0xd9cfb0,shirt:0xd9cfb0,pants:0xc4b998,acc:'bandage',s:1},
+   {name:'선인장 좀비',role:'탱커',skin:0x4f9d57,shirt:0x4f9d57,pants:0x3d7d45,acc:'cactus',s:1.4,fat:1.25},
+   {name:'카우보이 좀비',role:'러너',skin:0x86b86b,shirt:0x9c4f2e,pants:0x3d5a80,acc:'cowboy',s:.75}]},
+{ id:'D', kind:'clay', name:'말랑 비닐토이', tag:'클레이 · 광택 파스텔',
+  pitch:'찹쌀떡처럼 둥글고 표면에 은은한 광택이 도는 아트토이 풍. 좀비까지 사탕 색이라 가장 달콤합니다.',
+  shade:'클리어코트 광택 머티리얼, 부드러운 양방향 조명, 파스텔 색',
+  shape:'공에 가까운 몸과 아주 짧은 다리, 실눈과 볼터치',
+  perf:'광택 머티리얼이 무겁습니다. 카피바라와 보스에만 쓰고 일반 좀비는 가벼운 머티리얼로 낮추는 구성을 권합니다.',
+  bg:'linear-gradient(#ffe3ec,#cdeaff)', light:{sky:0xffffff,ground:0xffc9d9,hemi:.68,sun:.72},
+  eye:'sleepy', prop:{head:1.12,legH:.22,bl:.98,bh:.7,bw:.74}, item:'mandarin',
+  capy:{fur:0xe2a56f,furDark:0xc4844f,belly:0xf6cfa3,nose:0x7a4a35,foot:0x7a4a35,saddle:0x8ecae6,trim:0xff8fab,blush:0xff9eb5},
+  weapon:{body:0x9be3c9,metal:0xe9f5f2,dark:0x5d6d7e,accent:0xff8fab,stripe:0xffffff,tip:0xffe066},
+  rider:{type:'hamster',label:'햄스터',body:0xf7c98b},
+  map:{id:'candy',name:'캔디 놀이공원',ground:0xffbfd0,soil:0xe08aa6},
+  zombies:[
+   {name:'파티모자 좀비',role:'기본',skin:0xa8e6cf,shirt:0xffe066,pants:0x8ecae6,acc:'party',s:1},
+   {name:'풍선껌 뚱보',role:'탱커',skin:0xc9b6f2,shirt:0xff8fab,pants:0x9d8ad6,acc:'gum',s:1.45,fat:1.35},
+   {name:'토끼 머리띠',role:'러너',skin:0xb8f0dc,shirt:0xffffff,pants:0xffb3c6,acc:'bunny',s:.7}]}
+];
+
+/* ───────── 스타일별 조립 키트: 같은 설계도를 다른 재질·형태로 찍어낸다 ───────── */
+function gradTex(steps){
+  const d=new Uint8Array(steps.length*4);
+  steps.forEach((v,i)=>{d[i*4]=d[i*4+1]=d[i*4+2]=v;d[i*4+3]=255});
+  const t=new T.DataTexture(d,steps.length,1,T.RGBAFormat);
+  t.minFilter=t.magFilter=T.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;
+}
+function makeKit(kind){
+  const K={kind},mc={};
+  const G={ s:kind==='low'?new T.IcosahedronGeometry(1,1):new T.SphereGeometry(1,28,20),
+            b:new T.BoxGeometry(1,1,1),
+            c:new T.CylinderGeometry(1,1,1,kind==='low'?8:24),
+            k:new T.ConeGeometry(1,1,kind==='low'?6:20) };
+  const grad=gradTex([115,190,255]);
+  const olMat=new T.MeshBasicMaterial({color:new T.Color(0x2b1c16).convertSRGBToLinear(),side:T.BackSide});
+  K.mat=(c,flat)=>{
+    const k=c+(flat?'f':''); if(mc[k])return mc[k];
+    const col=new T.Color(c).convertSRGBToLinear(); let m;
+    if(flat) m=new T.MeshBasicMaterial({color:col});
+    else if(kind==='low') m=new T.MeshStandardMaterial({color:col,flatShading:true,roughness:.9});
+    else if(kind==='toon') m=new T.MeshToonMaterial({color:col,gradientMap:grad});
+    else if(kind==='vox') m=new T.MeshLambertMaterial({color:col});
+    else m=new T.MeshPhysicalMaterial({color:col,roughness:.45,clearcoat:.6,clearcoatRoughness:.35});
+    return mc[k]=m;
+  };
+  function fin(m,ext,o){
+    if(!o.flat){m.castShadow=true;m.receiveShadow=!o.noRecv;}
+    if(kind==='toon'&&!o.flat&&!o.nol){
+      const t=o.ol||.03, ol=new T.Mesh(m.geometry,olMat);
+      ol.scale.set(1+t/ext[0],1+t/ext[1],1+t/ext[2]); m.add(ol);
+    }
+    if(o.axis==='x')m.rotation.z=-PI/2;
+    if(o.axis==='z')m.rotation.x=PI/2;
+    return m;
+  }
+  K.box=(w,h,d,c,o={})=>{const m=new T.Mesh(G.b,K.mat(c,o.flat));m.scale.set(w,h,d);return fin(m,[w/2,h/2,d/2],Object.assign({},o,{axis:null}));};
+  K.ell=(rx,ry,rz,c,o={})=>{
+    if(kind==='vox'){const s=o.flat?1:.88;return K.box(2*rx*s,2*ry*s,2*rz*s,c,o);}
+    const m=new T.Mesh(G.s,K.mat(c,o.flat));m.scale.set(rx,ry,rz);return fin(m,[rx,ry,rz],o);
+  };
+  K.cyl=(r,h,c,o={})=>{
+    let m; if(kind==='vox'){m=new T.Mesh(G.b,K.mat(c,o.flat));m.scale.set(r*1.8,h,r*1.8);}
+    else{m=new T.Mesh(G.c,K.mat(c,o.flat));m.scale.set(r,h,r);}
+    return fin(m,[r,h/2,r],o);
+  };
+  K.cone=(r,h,c,o={})=>{
+    let m; if(kind==='vox'){m=new T.Mesh(G.b,K.mat(c,o.flat));m.scale.set(r*1.5,h,r*1.5);}
+    else{m=new T.Mesh(G.k,K.mat(c,o.flat));m.scale.set(r,h,r);}
+    return fin(m,[r,h/2,r],o);
+  };
+  return K;
+}
+const add=(p,m,x=0,y=0,z=0)=>{m.position.set(x,y,z);p.add(m);return m;};
+const BL=0x1d1512, WH=0xffffff;
+
+function eye(K,type,r){
+  const g=new T.Group(), f={flat:1};
+  if(type==='sleepy'){ add(g,K.box(r*2.6,r*.6,r*.5,BL,f)); }
+  else if(type==='pixel'){ add(g,K.box(r*1.8,r*1.8,r*.5,BL,f)); add(g,K.box(r*.7,r*.7,r*.2,WH,f),r*.4,r*.4,r*.3); }
+  else if(type==='big'){ add(g,K.ell(r*1.5,r*1.7,r*.6,BL,f)); add(g,K.ell(r*.55,r*.55,r*.2,WH,f),r*.45,r*.6,r*.5); add(g,K.ell(r*.25,r*.25,r*.1,WH,f),-r*.5,-r*.6,r*.5); }
+  else if(type==='zed'){ add(g,K.ell(r,r,r*.45,0xfffbe6,f)); add(g,K.ell(r*.32,r*.32,r*.2,BL,f),r*.15,-r*.1,r*.4); }
+  else { add(g,K.ell(r,r,r*.5,BL,f)); add(g,K.ell(r*.33,r*.33,r*.15,WH,f),r*.3,r*.35,r*.45); }
+  return g;
+}
+
+/* ───────── 무기 ───────── */
+function gatling(K,w){
+  const g=new T.Group();
+  add(g,K.box(.42,.24,.24,w.body),-.1,0,0);
+  add(g,K.box(.16,.1,.3,w.dark),-.1,0,-.2);
+  const spin=new T.Group(); add(g,spin,.1,0,0);
+  for(let i=0;i<6;i++){const a=i*PI/3; add(spin,K.cyl(.032,.62,w.metal,{axis:'x'}),.33,Math.cos(a)*.075,Math.sin(a)*.075);}
+  add(spin,K.cyl(.125,.05,w.dark,{axis:'x'}),.2,0,0);
+  add(spin,K.cyl(.125,.05,w.dark,{axis:'x'}),.6,0,0);
+  add(g,K.cyl(.15,.14,w.accent,{axis:'z'}),-.12,-.2,0);
+  g.userData.spin=spin; return g;
+}
+function rocketPod(K,w){
+  const g=new T.Group();
+  add(g,K.box(.56,.34,.34,w.accent));
+  add(g,K.box(.08,.355,.355,w.stripe),-.12,0,0);
+  add(g,K.box(.16,.1,.3,w.dark),-.1,0,.2);
+  [-1,1].forEach(y=>[-1,1].forEach(z=>{
+    add(g,K.cyl(.065,.03,w.dark,{axis:'x'}),.285,y*.085,z*.085);
+    add(g,K.cone(.05,.13,w.tip,{axis:'x'}),.35,y*.085,z*.085);
+  }));
+  return g;
+}
+
+/* ───────── 라이더 (카피바라보다 작은 동물) ───────── */
+function buildRider(K,R){
+  const g=new T.Group(), t=R.type, c=R.body;
+  add(g,K.ell(.19,.2,.19,c),0,.2,0);
+  const h=new T.Group(); add(g,h,.03,.52,0);
+  add(h,K.ell(.23,.21,.23,c));
+  if(t!=='frog')[1,-1].forEach(s=>{const e=eye(K,'dot',.035); add(h,e,.215,0,s*.1); e.rotation.y=PI/2;});
+  [1,-1].forEach(s=>add(g,K.ell(.065,.065,.065,c),.15,.24,s*.19));
+  add(g,K.cyl(.02,.5,0x2f363c,{axis:'z'}),.23,.22,0);
+  if(t==='duck'){
+    add(h,K.ell(.1,.035,.09,0xf59a23),.25,-.05,0);
+    [1,-1].forEach(s=>add(g,K.ell(.1,.12,.04,c),-.03,.22,s*.2));
+    add(g,K.ell(.08,.06,.08,c),-.2,.3,0);
+    add(h,K.ell(.25,.15,.25,0x5d7a3a),-.01,.14,0);
+  }else if(t==='cat'){
+    [1,-1].forEach(s=>add(h,K.cone(.07,.13,c),-.02,.24,s*.13));
+    add(h,K.ell(.08,.06,.1,0xfff3df),.19,-.07,0);
+    add(h,K.ell(.025,.02,.03,0xff8fa3,{flat:1}),.265,-.05,0);
+    const tail=add(g,K.cyl(.035,.32,c),-.22,.3,0); tail.rotation.z=.5;
+    add(h,K.cyl(.236,.06,0x3a2a22),0,.11,0);
+    [1,-1].forEach(s=>add(h,K.cyl(.07,.06,0x8fd3ff,{axis:'x'}),.19,.12,s*.09));
+    add(g,K.ell(.2,.06,.2,0xe63946),0,.37,0);
+    const sc=add(g,K.box(.24,.05,.08,0xe63946),-.24,.38,.05); sc.rotation.z=-.3;
+  }else if(t==='frog'){
+    add(g,K.ell(.15,.15,.15,0xd8f0a8),.06,.18,0);
+    [1,-1].forEach(s=>{ add(h,K.ell(.085,.085,.085,c),.08,.2,s*.12); const e=eye(K,'dot',.04); add(h,e,.165,.21,s*.12); e.rotation.y=PI/2; });
+    add(h,K.box(.02,.016,.24,BL,{flat:1}),.222,-.05,0);
+    add(h,K.cyl(.236,.05,0xe63946),0,.07,0);
+    const kn=add(h,K.box(.2,.04,.05,0xe63946),-.3,.05,.04); kn.rotation.z=.35;
+  }else{ // hamster
+    add(g,K.ell(.15,.15,.15,0xfff3df),.06,.18,0);
+    [1,-1].forEach(s=>{ add(h,K.ell(.07,.07,.03,0xe9a868),-.02,.2,s*.16); add(h,K.ell(.1,.09,.1,0xfff3df),.13,-.08,s*.12); });
+    add(h,K.ell(.025,.02,.03,0xff8fa3,{flat:1}),.245,-.03,0);
+    add(h,K.ell(.2,.13,.2,0xffd43b),0,.14,0);
+    add(h,K.cyl(.25,.025,0xffd43b),.03,.12,0);
+  }
+  g.userData.head=h; return g;
+}
+
+/* ───────── 카피바라 ───────── */
+function buildCapy(K,S){
+  const c=S.capy, g=new T.Group(), p=Object.assign({head:1,legH:.36,bl:1.05,bh:.6,bw:.64},S.prop);
+  const by=p.legH+p.bh*.9;
+  [-1,1].forEach(sx=>[-1,1].forEach(sz=>{
+    add(g,K.cyl(.14,p.legH+.2,c.furDark),sx*p.bl*.55,(p.legH+.2)/2,sz*p.bw*.55);
+    add(g,K.ell(.16,.07,.17,c.foot),sx*p.bl*.55+.04,.07,sz*p.bw*.55);
+  }));
+  const body=new T.Group(); add(g,body,0,by,0);
+  add(body,K.ell(p.bl,p.bh,p.bw,c.fur));
+  add(body,K.ell(p.bl*.8,p.bh*.6,p.bw*.85,c.belly),0,-p.bh*.42,0);
+  // 머리: 뭉툭한 주둥이가 카피바라의 핵심 실루엣
+  const h=new T.Group(); add(body,h,p.bl*.82,p.bh*.5,0); h.scale.setScalar(p.head);
+  add(h,K.ell(.48,.42,.44,c.fur));
+  add(h,K.ell(.36,.32,.37,c.fur),.34,-.07,0);
+  add(h,K.ell(.1,.1,.2,c.nose),.62,.02,0);
+  add(h,K.box(.03,.03,.14,BL,{flat:1}),.665,-.2,0);
+  if(c.teeth) add(h,K.box(.04,.09,.1,WH,{nol:1}),.64,-.27,0);
+  const ears=[1,-1].map(s=>add(h,K.ell(.07,.1,.09,c.furDark),-.2,.38,s*.27));
+  [1,-1].forEach(s=>{ const e=eye(K,S.eye,.06); add(h,e,.16,.17,s*.385); if(s<0)e.rotation.y=PI; });
+  if(c.blush)[1,-1].forEach(s=>add(h,K.ell(.08,.05,.02,c.blush,{flat:1}),.36,-.03,s*.372));
+  if(S.item==='mandarin'){
+    add(h,K.ell(.15,.13,.15,0xf7931e),.02,.52,0);
+    const lf=add(h,K.ell(.07,.02,.04,0x4f8a3c),.05,.66,0); lf.rotation.z=.4;
+  }else if(S.item==='flower'){
+    add(h,K.ell(.06,.06,.06,0xffd43b),-.02,.44,.12);
+    for(let i=0;i<5;i++){const a=i*PI*.4; add(h,K.ell(.055,.03,.055,0xffffff),-.02+Math.cos(a)*.09,.43,.12+Math.sin(a)*.09);}
+  }
+  // 안장과 무기 마운트
+  let band;
+  if(K.kind==='vox') band=K.box(.8,p.bh*1.86,p.bw*1.87,c.saddle);
+  else{ band=K.cyl(1,.8,c.saddle,{axis:'x'}); band.scale.set(p.bh*1.03,.8,p.bw*1.04); }
+  add(body,band,-.05,0,0);
+  [-.4,.3].forEach(x=>{
+    let tr; if(K.kind==='vox') tr=K.box(.08,p.bh*1.9,p.bw*1.91,c.trim);
+    else{ tr=K.cyl(1,.08,c.trim,{axis:'x',nol:1}); tr.scale.set(p.bh*1.05,.08,p.bw*1.06); }
+    add(body,tr,x,0,0);
+  });
+  add(body,K.ell(.3,.09,.26,c.trim),-.05,p.bh*1.02,0);
+  const gat=gatling(K,S.weapon); add(body,gat,.12,.12,p.bw+.2);
+  const rk=rocketPod(K,S.weapon); add(body,rk,.1,.12,-(p.bw+.2));
+  const rider=buildRider(K,S.rider); add(body,rider,-.08,p.bh*1.04,0);
+  g.userData={body,head:h,ears,spin:gat.userData.spin,rider,by};
+  return g;
+}
+
+/* ───────── 좀비 ───────── */
+function buildZombie(K,Z){
+  const g=new T.Group(), f=Z.fat||1, skin=Z.skin;
+  [1,-1].forEach(s=>{ add(g,K.cyl(.1,.32,Z.pants),0,.16,s*.13*f); add(g,K.ell(.13,.06,.11,0x3b3030),.04,.05,s*.13*f); });
+  add(g,K.ell(.25*f,.3,.27*f,Z.shirt),0,.56,0);
+  const arms=[1,-1].map(s=>{
+    const a=new T.Group(); add(g,a,.05,.7,s*.27*f);
+    add(a,K.cyl(.07,.4,Z.shirt,{axis:'x'}),.2,0,0);
+    add(a,K.ell(.09,.09,.09,skin),.42,0,0);
+    a.userData.base=s>0?-.15:.2; a.rotation.z=a.userData.base; return a;
+  });
+  const h=new T.Group(); add(g,h,.04,1.08,0); h.rotation.x=.1;
+  add(h,K.ell(.36,.33,.36,Z.headCol||skin));
+  const A=Z.acc;
+  if(A==='pumpkin'){
+    [1,-1].forEach(s=>{const e=add(h,K.box(.03,.1,.1,0xffe45c,{flat:1}),.335,.03,s*.13); e.rotation.x=PI/4;});
+    add(h,K.box(.03,.05,.26,0xffe45c,{flat:1}),.32,-.15,0);
+    add(h,K.cyl(.05,.14,0x4f8a3c),0,.36,0);
+  }else{
+    const e1=eye(K,'zed',.115); add(h,e1,.335,0,.14); e1.rotation.y=PI/2;
+    const e2=eye(K,'zed',.07); add(h,e2,.345,-.02,-.15); e2.rotation.y=PI/2;
+    if(A!=='gum'){ const m=add(h,K.ell(.12,.05,.03,BL,{flat:1}),.318,-.17,0); m.rotation.y=PI/2;
+      add(h,K.box(.03,.05,.05,WH,{flat:1}),.33,-.15,.05); }
+  }
+  if(Z.brain) add(h,K.ell(.15,.09,.15,0xff9db0),-.05,.3,.08);
+  if(A==='tie'){ add(g,K.box(.03,.24,.08,0xe03131),.25*f,.56,0); add(g,K.box(.04,.06,.1,0xe03131),.24*f,.72,0); }
+  if(A==='straw'){ add(h,K.cyl(.5,.03,0xe2b64f),0,.2,0); add(h,K.cyl(.24,.17,0xe2b64f),0,.29,0); add(h,K.cyl(.245,.04,0xc95f4a,{nol:1}),0,.24,0); }
+  if(A==='hardhat'){ add(h,K.ell(.37,.2,.37,0xffc21f),0,.2,0); add(h,K.cyl(.43,.03,0xffc21f),.06,.16,0); }
+  if(A==='cap'){ add(h,K.ell(.37,.18,.37,Z.capCol),0,.2,0); add(h,K.box(.26,.03,.4,Z.capCol),.42,.17,0); }
+  if(A==='bandage'){
+    add(h,K.cyl(.34,.05,0xa89f84,{nol:1}),0,.2,0); add(h,K.cyl(.33,.05,0xa89f84,{nol:1}),0,-.24,0);
+    add(g,K.cyl(.265*f,.04,0xa89f84,{nol:1}),0,.48,0); add(g,K.cyl(.25*f,.04,0xa89f84,{nol:1}),0,.66,0);
+    const st=add(g,K.box(.05,.3,.04,0xd9cfb0),-.2,.5,.2); st.rotation.z=.3;
+  }
+  if(A==='cowboy'){ add(h,K.cyl(.52,.03,0x7a4a26),0,.2,0); add(h,K.cyl(.23,.2,0x7a4a26),0,.31,0); add(h,K.cyl(.235,.04,0xfcbf49,{nol:1}),0,.25,0); }
+  if(A==='cactus'){
+    add(h,K.ell(.09,.06,.09,0xff6fa5),.02,.36,0);
+    [[.2,.2,.24],[-.2,.1,.28],[.1,.2,-.28],[-.25,.2,-.15],[-.34,-.05,0]].forEach(q=>add(h,K.box(.05,.05,.05,0xf4f0d0),q[0],q[1],q[2]));
+    [[.1,.6,.3],[-.1,.5,-.31]].forEach(q=>add(g,K.box(.05,.05,.05,0xf4f0d0),q[0]*f,q[1],q[2]*f));
+  }
+  if(A==='party'){ const ph=add(h,K.cone(.16,.36,0xff8fab),-.03,.46,0); ph.rotation.z=.12; add(h,K.ell(.05,.05,.05,0xffffff),-.07,.65,0); }
+  if(A==='gum'){ add(h,K.ell(.19,.19,.19,0xff9ac2),.47,-.14,0); }
+  if(A==='bunny'){ [1,-1].forEach(s=>{const e=add(h,K.ell(.06,.2,.04,0xffb3c6),-.02,.46,s*.13); e.rotation.x=s*.15;}); }
+  g.userData={arms,head:h}; g.scale.setScalar(Z.s||1); return g;
+}
+
+/* ───────── 맵 소품 ───────── */
+function buildMap(K,M){
+  const g=new T.Group();
+  add(g,K.cyl(3.75,.5,M.ground),0,-.25,0);
+  add(g,K.cyl(3.75,.35,M.soil),0,-.67,0);
+  const pg=new T.Group(); pg.scale.setScalar(.82); g.add(pg);
+  if(M.id==='farm'){
+    add(pg,K.cyl(.38,.6,0xe2b64f,{axis:'z'}),-.4,.38,-2.8);
+    add(pg,K.cyl(.38,.6,0xe2b64f,{axis:'z'}),.5,.38,-3.1);
+    for(let i=0;i<5;i++){ add(pg,K.box(.1,.6,.1,0x9a7447),-3.1+i*.7,.3,2.9-Math.abs(i-2)*.25); }
+    add(pg,K.box(3,.08,.06,0x9a7447),-1.7,.42,2.75);
+    [[2.8,2.2],[3.4,-1.4],[-3.5,-1.6],[0,3.6],[1.2,-3.4],[-2.4,1.2]].forEach(q=>add(pg,K.cone(.14,.3,0x5f9e3f),q[0],.15,q[1]));
+    const tr=new T.Group(); add(pg,tr,-2.9,0,-2.4);
+    add(tr,K.cyl(.12,.9,0x7a5a3c),0,.45,0); add(tr,K.ell(.7,.6,.7,0x4f8a3c),0,1.25,0);
+    [[.5,1.2,.4],[-.3,1.5,.5],[.1,1,.66]].forEach(q=>add(tr,K.ell(.1,.1,.1,0xf7931e),q[0],q[1],q[2]));
+  }else if(M.id==='city'){
+    for(let i=-2;i<=2;i++) add(pg,K.box(.7,.02,.14,0xffd43b,{nol:1}),i*1.5,.01,2.4);
+    [[.2,-2.6],[3.2,1.6],[-3.3,-1.2]].forEach(q=>{ add(pg,K.cyl(.2,.05,0xff6b1a),q[0],.03,q[1]); add(pg,K.cone(.15,.42,0xff6b1a),q[0],.25,q[1]); });
+    const lp=new T.Group(); add(pg,lp,-2.6,0,-2.8);
+    add(lp,K.cyl(.06,2.4,0x2a2f3a),0,1.2,0); add(lp,K.box(.6,.06,.06,0x2a2f3a),.27,2.4,0);
+    add(lp,K.ell(.14,.14,.14,0xfff3a0,{flat:1}),.55,2.3,0);
+    add(pg,K.box(.9,.7,.5,0x3b5bdb),2.4,.35,-3); add(pg,K.box(.9,.08,.5,0x8fd3ff),2.4,.74,-3);
+  }else if(M.id==='desert'){
+    const ca=new T.Group(); add(pg,ca,-2.8,0,-2.5);
+    add(ca,K.box(.34,1.5,.34,0x4f9d57),0,.75,0); add(ca,K.box(.5,.22,.22,0x4f9d57),.4,.8,0); add(ca,K.box(.22,.5,.22,0x4f9d57),.55,1.1,0);
+    add(ca,K.box(.4,.22,.22,0x4f9d57),-.35,.55,0); add(ca,K.box(.22,.4,.22,0x4f9d57),-.45,.8,0);
+    add(pg,K.box(.6,1.3,.6,0xd9c08a),2.6,.65,-2.9); add(pg,K.box(.8,.2,.8,0xc9ae76),2.6,1.4,-2.9);
+    add(pg,K.box(.6,.5,.6,0xd9c08a),1.4,.25,-3.3);
+    [[3.2,2],[-3.4,1.5],[0,3.4],[-1,-3.6]].forEach((q,i)=>add(pg,K.box(.4+i*.08,.26,.36,0xb8904f),q[0],.13,q[1]));
+  }else{
+    [[-2.8,-2.6,0xff8fab,1.7],[2.7,-2.9,0x8ecae6,1.3],[-3.5,1.2,0xffe066,1]].forEach(q=>{
+      add(pg,K.cyl(.05,q[3],0xffffff),q[0],q[3]/2,q[1]);
+      add(pg,K.cyl(.36,.12,q[2],{axis:'z'}),q[0],q[3]+.3,q[1]);
+      add(pg,K.cyl(.2,.13,0xffffff,{axis:'z',nol:1}),q[0],q[3]+.3,q[1]);
+    });
+    [[3.3,1.8,0xc9b6f2],[.4,3.5,0x9be3c9],[1,-3.4,0xff8fab],[-1.8,3,0xffe066],[-.8,-3.3,0x8ecae6]].forEach(q=>add(pg,K.ell(.28,.3,.28,q[2]),q[0],.05,q[1]));
+  }
+  return g;
+}
+
+/* ───────── 무대 ───────── */
+const VIEWS={ all:{R:3.55,el:.3,label:'전체'}, capy:{R:2.0,el:.24,label:'카피바라'}, zed:{R:2.3,el:.24,label:'좀비'}, game:{R:4.1,el:.98,label:'게임 시점'} };
+const stages=[];
+function makeStage(S,root){
+  const wrap=root.querySelector('.stage'), canvas=wrap.querySelector('canvas');
+  const r=new T.WebGLRenderer({canvas,antialias:true,alpha:true});
+  r.setPixelRatio(Math.min(devicePixelRatio||1,2)); r.outputEncoding=T.sRGBEncoding;
+  r.shadowMap.enabled=true; r.shadowMap.type=T.PCFSoftShadowMap;
+  const scene=new T.Scene(), cam=new T.PerspectiveCamera(30,1.6,.1,100);
+  scene.add(new T.HemisphereLight(S.light.sky,S.light.ground,S.light.hemi));
+  const sun=new T.DirectionalLight(0xffffff,S.light.sun); sun.position.set(4,9,5); sun.castShadow=true;
+  sun.shadow.mapSize.set(1024,1024); const sc=sun.shadow.camera; sc.left=-6;sc.right=6;sc.top=6;sc.bottom=-6;sc.near=1;sc.far=25;
+  sun.shadow.bias=-.0015; sun.shadow.normalBias=.03; scene.add(sun);
+  if(S.kind==='clay'){ const rim=new T.DirectionalLight(0xffd6e8,.45); rim.position.set(-5,4,-4); scene.add(rim); }
+  const K=makeKit(S.kind), turn=new T.Group(); scene.add(turn);
+  turn.add(buildMap(K,S.map));
+  const capy=buildCapy(K,S); add(turn,capy,-1.5,0,0);
+  const zpos=[[.9,1.0,.25],[2.25,-.2,0],[1.0,-1.35,-.3]];
+  const zeds=S.zombies.map((Z,i)=>{ const z=buildZombie(K,Z); add(turn,z,zpos[i][0],0,zpos[i][1]); z.rotation.y=PI+zpos[i][2]; return z; });
+  const zc=new T.Object3D(); add(turn,zc,1.45,0,-.2);
+  const st={S,r,scene,cam,turn,capy,zeds,zc,wrap,view:'all',drag:0,visible:true,
+            tgt:new T.Vector3(0,.9,0),d:16,el:.3,size:[0,0]};
+  // 드래그 회전
+  let px=null;
+  wrap.addEventListener('pointerdown',e=>{px=e.clientX;wrap.setPointerCapture(e.pointerId);});
+  wrap.addEventListener('pointermove',e=>{ if(px===null)return; st.drag+=(e.clientX-px)*.01; px=e.clientX; });
+  ['pointerup','pointercancel'].forEach(n=>wrap.addEventListener(n,()=>{px=null;}));
+  root.querySelectorAll('.views button').forEach(b=>b.addEventListener('click',()=>{
+    st.view=b.dataset.v; root.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  }));
+  new IntersectionObserver(es=>{st.visible=es[0].isIntersecting;}).observe(wrap);
+  stages.push(st);
+}
+const tmp=new T.Vector3();
+function frame(ms){
+  const t=ms/1000;
+  for(const st of stages){
+    if(!st.visible)continue;
+    const w=st.wrap.clientWidth,h=st.wrap.clientHeight; if(!w||!h)continue;
+    if(w!==st.size[0]||h!==st.size[1]){ st.size=[w,h]; st.r.setSize(w,h,false); st.cam.aspect=w/h; st.cam.updateProjectionMatrix(); }
+    const u=st.capy.userData, m=reduce?0:1;
+    st.turn.rotation.y=st.drag+(st.view==='game'?0:Math.sin(t*.35)*.75*m);
+    u.body.position.y=u.by+Math.sin(t*3)*.02*m;
+    u.spin.rotation.x=t*14*m;
+    u.ears.forEach((e,i)=>e.rotation.x=Math.max(0,Math.sin(t*1.3+i))**8*.5*m*(i?-1:1));
+    u.rider.position.y=u.rider.userData.y0??(u.rider.userData.y0=u.rider.position.y);
+    u.rider.position.y+=Math.abs(Math.sin(t*6))*.03*m;
+    st.zeds.forEach((z,i)=>{ const zu=z.userData;
+      z.rotation.z=Math.sin(t*2.2+i*2)*.08*m;
+      zu.arms.forEach((a,j)=>a.rotation.z=a.userData.base+Math.sin(t*3+i+j*1.7)*.18*m);
+      zu.head.rotation.z=-.08+Math.sin(t*1.7+i)*.1*m; });
+    // 카메라
+    const V=VIEWS[st.view];
+    if(st.view==='capy'){ st.capy.getWorldPosition(tmp); tmp.y=1.05; }
+    else if(st.view==='zed'){ st.zc.getWorldPosition(tmp); tmp.y=.8; }
+    else tmp.set(0,st.view==='game'?0:.9,0);
+    const d=V.R/(Math.tan(15*PI/180)*Math.min(st.cam.aspect,1.6));
+    const k=reduce?1:.08;
+    st.tgt.lerp(tmp,k); st.d+=(d-st.d)*k; st.el+=(V.el-st.el)*k;
+    st.cam.position.set(st.tgt.x,st.tgt.y+Math.sin(st.el)*st.d,st.tgt.z+Math.cos(st.el)*st.d);
+    st.cam.lookAt(st.tgt);
+    st.r.render(st.scene,st.cam);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ───────── 페이지 조립 ───────── */
+const host=document.getElementById('styles');
+STYLES.forEach(S=>{
+  const sw=[S.capy.fur,S.capy.belly,S.capy.saddle,S.capy.trim,S.weapon.accent,S.zombies[0].skin,S.zombies[1].shirt,S.map.ground];
+  const sec=document.createElement('section'); sec.className='style'; sec.id='style-'+S.id;
+  sec.innerHTML=`
+  <div class="stagecol">
+    <div class="stage" style="background:${S.bg}"><canvas aria-label="${S.name} 3D 시안"></canvas><span class="hint">끌어서 돌리기</span></div>
+    <div class="views" role="group" aria-label="보기 전환">
+      ${Object.keys(VIEWS).map(v=>`<button type="button" id="v-${S.id}-${v}" data-v="${v}" aria-pressed="${v==='all'}">${VIEWS[v].label}</button>`).join('')}
+    </div>
+  </div>
+  <div class="spec">
+    <div class="head"><div class="code">${S.id}</div><div><h2>${S.name}</h2><div class="tag">${S.tag}</div></div></div>
+    <p>${S.pitch}</p>
+    <div class="swatches" aria-label="팔레트">${sw.map(c=>`<i style="background:${hex(c)}" title="${hex(c)}"></i>`).join('')}</div>
+    <dl>
+      <dt>셰이딩</dt><dd>${S.shade}</dd>
+      <dt>형태</dt><dd>${S.shape}</dd>
+      <dt>라이더</dt><dd><b>${S.rider.label}</b></dd>
+      <dt>맵 예시</dt><dd><b>${S.map.name}</b></dd>
+      <dt>좀비</dt><dd><ul class="zlist">${S.zombies.map(z=>`<li><span class="role">${z.role}</span><span>${z.name}</span></li>`).join('')}</ul></dd>
+      <dt>물량</dt><dd>${S.perf}</dd>
+    </dl>
+  </div>`;
+  host.appendChild(sec);
+  try{ makeStage(S,sec); }
+  catch(e){ sec.querySelector('.hint').textContent='이 브라우저에서 3D를 표시할 수 없습니다'; console.error(e); }
+});
+requestAnimationFrame(frame);
+})();
+</script>

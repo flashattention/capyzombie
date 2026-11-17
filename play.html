@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>카피좀비 플레이</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <section id="select" class="panel">
+    <h1>카피좀비</h1>
+    <p class="sub">같이 싸울 친구를 고르고 꾸며 주세요.</p>
+
+    <label class="h" for="name">이름</label>
+    <div class="row">
+      <input id="name" type="text" maxlength="12" autocomplete="off" spellcheck="false" placeholder="이름을 지어 주세요">
+      <button id="dice" type="button" class="ghost" aria-label="이름 무작위로 짓기">무작위</button>
+    </div>
+
+    <div class="h">라이더</div>
+    <div id="animals" class="chips big"></div>
+    <div class="h">모자</div>
+    <div id="acc-hat" class="chips"></div>
+    <div class="h">얼굴</div>
+    <div id="acc-face" class="chips"></div>
+    <div class="h">목</div>
+    <div id="acc-neck" class="chips"></div>
+
+    <div class="h">전장</div>
+    <div id="maps" class="chips"></div>
+
+    <button id="go" type="button" class="primary">출발!</button>
+    <p class="hint">캐릭터를 끌면 돌려볼 수 있어요.</p>
+  </section>
+
+  <div id="hud" hidden>
+    <div class="hud-left">
+      <div class="who"><span id="hud-name"></span><span id="lv">Lv 1</span></div>
+      <div class="hp"><div id="hp-fill"></div></div>
+      <div class="hp st"><div id="st-fill"></div></div>
+    </div>
+    <div class="hud-right">
+      <div><span class="k">처치</span> <b id="kills">0</b></div>
+      <div><span class="k">생존</span> <b id="time">0:00</b></div>
+    </div>
+  </div>
+  <div id="xp" hidden><div id="xp-fill"></div></div>
+  <div id="tag" hidden></div>
+  <div id="levelup" hidden>
+    <div class="lv-box">
+      <h1 id="lv-title">레벨 업!</h1>
+      <p>강화 하나를 고르세요. 숫자 키 1 · 2 · 3으로도 고를 수 있어요.</p>
+      <div id="choices"></div>
+    </div>
+  </div>
+  <div id="help" hidden>이동 WASD · 질주 Shift (좀비를 들이받기) · 점프 Space · 사격은 자동 · 귤을 모으면 레벨 업</div>
+
+  <div id="over" hidden>
+    <div class="panel over-card">
+      <h1>좀비에게 따라잡혔어요</h1>
+      <p id="over-stats"></p>
+      <button id="retry" type="button" class="primary">다시 도전</button>
+      <button id="back" type="button" class="ghost">캐릭터 바꾸기</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

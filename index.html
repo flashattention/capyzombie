@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>카피좀비</title>
+  <meta name="description" content="카피바라 등에 올라탄 작은 친구가 게틀링건과 로켓으로 좀비 떼를 물리치는 3D 웹 게임.">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-copy">
+        <h1>카피좀비</h1>
+        <p class="lead">세상 느긋한 카피바라 등에 올라타, 게틀링건과 로켓으로 몰려드는 좀비 떼를 쓸어버리세요.</p>
+        <div class="cta-row">
+          <a class="cta" href="/play.html">지금 플레이</a>
+          <span class="cta-note">설치 없이 브라우저에서 바로 · 프로토타입 버전</span>
+        </div>
+      </div>
+      <div class="stagecol">
+        <div class="stage" id="stage"><canvas id="hero" aria-label="카피바라와 좀비 3D 미리보기"></canvas><span class="hint">끌어서 돌리기</span></div>
+        <div class="pickers">
+          <div class="views" id="pick-map" role="group" aria-label="전장 미리보기"></div>
+          <div class="views" id="pick-rider" role="group" aria-label="라이더 미리보기"></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="block">
+      <h2>이렇게 싸웁니다</h2>
+      <div class="cols">
+        <div><h3>들이받고, 뛰어오르고</h3><p>사격은 카피바라가 알아서 합니다. 질주로 좀비 떼를 볼링핀처럼 날려 버리고, 점프로 언덕 위에 올라 숨을 돌리세요.</p></div>
+        <div><h3>귤을 모아 강해지기</h3><p>쓰러진 좀비가 떨어뜨린 귤을 모으면 레벨이 오릅니다. 그때마다 게틀링건, 로켓, 카피바라 강화 셋 중 하나를 고르세요.</p></div>
+        <div><h3>내 친구, 내 이름</h3><p>라이더 동물을 고르고 모자와 목걸이로 꾸민 뒤 이름을 지어 주세요. 머리 위에 그 이름이 떠다닙니다.</p></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>전장 네 곳, 좀비도 제각각</h2>
+      <div class="maps" id="maps"></div>
+    </section>
+
+    <section class="block">
+      <h2>등에 싣는 무기</h2>
+      <dl class="arms">
+        <dt>게틀링건</dt><dd>가장 가까운 좀비에게 쉬지 않고 쏩니다.</dd><dd class="state now">처음부터</dd>
+        <dt>로켓 포드</dt><dd>몇 초마다 한 발, 떼 한가운데를 터뜨립니다.</dd><dd class="state now">처음부터</dd>
+        <dt>강화 수트</dt><dd>카피바라 온몸을 감싸는 기계 갑옷.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
+        <dt>제트팩</dt><dd>좀비 떼 위로 날아올라 자리를 옮깁니다.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
+        <dt>레이저</dt><dd>일직선으로 늘어선 좀비를 한 번에 꿰뚫습니다.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
+      </dl>
+    </section>
+
+    <footer class="foot">
+      <a class="cta" href="/play.html">카피바라에 올라타기</a>
+      <span class="cta-note">이동 WASD · 질주 Shift · 점프 Space, 모바일은 화면을 끌어서 이동</span>
+    </footer>
+  </div>
+  <script type="module" src="/src/landing.js"></script>
+</body>
+</html>
