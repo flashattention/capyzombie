@@ -19,6 +19,12 @@
       <button id="dice" type="button" class="ghost" aria-label="닉네임 추천받기">추천</button>
     </div>
     <p id="nick-msg" class="info">닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.</p>
+    <div class="titlerow">
+      <label class="h" for="title-sel">칭호</label>
+      <select id="title-sel"></select>
+      <button id="ach-open" type="button" class="ghost">업적 · 칭호</button>
+    </div>
+    <p id="medals" class="info"></p>
 
     <div class="h">라이더</div>
     <div id="animals" class="chips big"></div>
@@ -33,8 +39,11 @@
     <div class="h">전장</div>
     <div id="maps" class="chips"></div>
     <p id="map-info" class="info"></p>
-    <div class="h">전체 랭킹 <span id="rank-map"></span></div>
-    <ol id="rank" class="rank"></ol>
+
+
+    <div class="h">난이도</div>
+    <div id="diffs" class="chips"></div>
+    <p id="diff-info" class="info"></p>
 
     <div class="h">설정</div>
     <div class="settings">
@@ -46,6 +55,22 @@
     <button id="go" type="button" class="primary">출발!</button>
     <p class="hint">캐릭터를 끌면 돌려볼 수 있어요.</p>
   </section>
+
+  <aside id="rankboard" class="panel" hidden>
+    <h2>전체 랭킹 <span id="rank-map"></span></h2>
+    <div id="rb-tabs" class="chips"></div>
+    <ol id="rank" class="rank"></ol>
+  </aside>
+
+  <div id="ach" class="overlay" hidden>
+    <div class="panel ach-card">
+      <div class="top"><h1>업적 · 메달 · 칭호</h1><button id="ach-close" type="button" class="ghost">닫기</button></div>
+      <p id="ach-sum" class="sub"></p>
+      <div class="h">칭호 고르기</div>
+      <div id="title-list" class="chips"></div>
+      <div id="ach-list"></div>
+    </div>
+  </div>
 
   <div id="hud" hidden>
     <div class="hud-left">
@@ -81,7 +106,8 @@
     <div class="skill" id="sk-m2"><kbd>우클릭</kbd><span>로켓 포드</span></div>
     <div class="skill" id="sk-q"><kbd>Q</kbd><span>발 구르기</span></div>
     <div class="skill" id="sk-e"><kbd>E</kbd><span>미끼 귤</span></div>
-    <div class="skill ult" id="sk-r"><kbd>R</kbd><span>귤 폭격</span></div>
+    <div class="skill ult" id="sk-r"><kbd>R</kbd><span>미사일 난사</span></div>
+    <div class="skill" id="sk-b"><kbd>B</kbd><span id="sk-b-n">B2 폭격 ×0</span></div>
   </div>
   <div id="help" hidden>이동 WASD · 게틀링 좌클릭 · 로켓 우클릭 · 돌진 Shift+W · 점프 Space · 일시정지 Esc</div>
 
@@ -112,6 +138,7 @@
       <h1 id="over-title"></h1>
       <p id="over-stats"></p>
       <p id="over-best"></p>
+      <ul id="over-ach" class="newach"></ul>
       <p id="over-rank-note"></p>
       <ol id="over-rank" class="rank"></ol>
       <button id="next" type="button" class="primary">다음 전장으로</button>

@@ -6,6 +6,8 @@ import { buildCapy, animateCapy } from './models/capy.js';
 import { RIDERS, ACCESSORIES, buildRider } from './models/riders.js';
 import { loadProfile, saveProfile, randomName, loadProgress, saveProgress, fmtTime, loadAccount, saveAccount, validNick } from './save.js';
 import { fetchTop, renderRank } from './rank.js';
+import { ACHS, CATS, TIER, TITLES, getState, chooseTitle } from './achievements.js';
+import { DIFFS, getDiff } from './difficulty.js';
 import { initAudio, setSound, sfx } from './audio.js';
 
 const $ = id => document.getElementById(id);
@@ -31,10 +33,40 @@ export function createSelect(renderer, onStart) {
     const best = progress.best[map.id], cleared = progress.cleared.includes(map.id);
     $('map-info').textContent = `${map.blurb} ` + (best ? `최고 기록 ${fmtTime(best.time)} · ${best.kills}마리${cleared ? ' · 클리어' : ''}` : '아직 기록이 없습니다.');
     saveProfile(profile);
-    // 전체 랭킹
-    $('rank-map').textContent = '· ' + map.name; $('rank').innerHTML = '<li class="none">불러오는 중…</li>';
-    const want = map.id; fetchTop(map.id).then(top => { if (profile.map === want) renderRank($('rank'), top, 5, account.nick); });
+    showBoard(map.id);
   }
+  // 왼쪽 위 전체 랭킹 보드: 전장 탭을 눌러 다른 전장의 순위도 본다
+  let boardMap = null;
+  function showBoard(id) {
+    boardMap = id; const m = getMap(id);
+    const tabs = $('rb-tabs'); tabs.innerHTML = '';
+    MAPS.forEach(x => { const b = document.createElement('button'); b.type = 'button'; b.id = 'rb-' + x.id; b.textContent = x.name; b.setAttribute('aria-pressed', x.id === id); b.onclick = () => showBoard(x.id); tabs.appendChild(b); });
+    $('rank-map').textContent = '· ' + m.name; $('rank').innerHTML = '<li class="none">불러오는 중…</li>';
+    fetchTop(id).then(top => { if (boardMap === id) renderRank($('rank'), top, 10, account.nick); });
+  }
+  // 칭호와 메달, 업적 화면
+  function renderTitle() {
+    const st = getState(), sel = $('title-sel');
+    sel.innerHTML = st.titles.map(t => `<option value="${t.id}"${t.id === st.title.id ? ' selected' : ''}>${t.name}</option>`).join('');
+    $('medals').textContent = `메달 ${st.total}/${ACHS.length} · 백금 ${st.medals[3]} · 금 ${st.medals[2]} · 은 ${st.medals[1]} · 동 ${st.medals[0]} · 칭호 ${st.titles.length}/${TITLES.length}`;
+    return st;
+  }
+  function renderAch() {
+    const st = renderTitle(), have = new Set(st.titles.map(t => t.id));
+    $('ach-sum').textContent = `업적 ${st.total}/${ACHS.length}개 달성 · 백금 ${st.medals[3]} · 금 ${st.medals[2]} · 은 ${st.medals[1]} · 동 ${st.medals[0]} · 누적 처치 ${st.stats.kills.toLocaleString()}마리`;
+    const tl = $('title-list'); tl.innerHTML = '';
+    TITLES.forEach(t => {
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'tl-' + t.id; b.textContent = t.name; b.title = t.how;
+      if (!have.has(t.id)) { b.className = 'locked'; b.disabled = true; } else { b.setAttribute('aria-pressed', t.id === st.title.id); b.onclick = () => { chooseTitle(t.id); renderAch(); }; }
+      tl.appendChild(b);
+    });
+    $('ach-list').innerHTML = CATS.map(c => `<h3>${c}</h3><ul class="achs">` + ACHS.filter(a => a.cat === c).map(a => {
+      const cur = Math.min(a.goal, a.get(st.stats)), done = cur >= a.goal;
+      return `<li class="${done ? 'done' : ''}"><span class="md t${a.tier}">${TIER[a.tier].name}</span><b>${a.name}</b><span class="ds">${a.desc}${a.goal > 1 ? ` (${Math.floor(cur).toLocaleString()}/${a.goal.toLocaleString()})` : ''}</span><span class="pbar"><i style="width:${cur / a.goal * 100}%"></i></span></li>`;
+    }).join('') + '</ul>').join('');
+  }
+  const onTitle = () => chooseTitle($('title-sel').value);
+  const onAchOpen = () => { renderAch(); $('ach').hidden = false; }, onAchClose = () => { $('ach').hidden = true; renderTitle(); };
 
   const capy = buildCapy(); turn.add(capy);
   let rider = null, pop = 0;
@@ -45,7 +77,7 @@ export function createSelect(renderer, onStart) {
   }
 
   // ── UI ──
-  const root = $('select'); root.hidden = false;
+  const root = $('select'); root.hidden = false; $('rankboard').hidden = false;
   const nameEl = $('name'), msgEl = $('nick-msg'), goEl = $('go'); nameEl.value = account.nick;
   const NICK_HELP = '닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.';
   function checkNick(warn) {
@@ -74,6 +106,9 @@ export function createSelect(renderer, onStart) {
     });
     $('perk').textContent = '특성: ' + (RIDERS.find(r => r.id === profile.animal) || RIDERS[0]).perk;
     chips($('maps'), MAPS.map(m => [m.id, m.name]), () => profile.map, id => { profile.map = id; }, i => !isOpen(i));
+    profile.diff = getDiff(profile.diff).id;
+    chips($('diffs'), DIFFS.map(d => [d.id, d.name]), () => profile.diff, id => { profile.diff = id; });
+    $('diff-info').textContent = getDiff(profile.diff).desc;
     for (const slot of Object.keys(ACCESSORIES)) chips($('acc-' + slot), ACCESSORIES[slot], () => profile[slot], id => { profile[slot] = id; });
   }
   // 설정
@@ -89,6 +124,8 @@ export function createSelect(renderer, onStart) {
   $('dice').addEventListener('click', onDice);
   $('go').addEventListener('click', onGo);
   sensEl.addEventListener('input', onSens); soundEl.addEventListener('change', onSound);
+  $('title-sel').addEventListener('change', onTitle); $('ach-open').addEventListener('click', onAchOpen); $('ach-close').addEventListener('click', onAchClose);
+  renderTitle();
   refreshMap(); render(); refreshRider(); checkNick(false);
   if (!account.nick) nameEl.focus();
 
@@ -121,7 +158,8 @@ export function createSelect(renderer, onStart) {
   }
 
   function dispose() {
-    root.hidden = true;
+    root.hidden = true; $('rankboard').hidden = true; $('ach').hidden = true;
+    $('title-sel').removeEventListener('change', onTitle); $('ach-open').removeEventListener('click', onAchOpen); $('ach-close').removeEventListener('click', onAchClose);
     nameEl.removeEventListener('input', onName);
     $('dice').removeEventListener('click', onDice);
     $('go').removeEventListener('click', onGo);

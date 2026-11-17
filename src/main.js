@@ -41,12 +41,15 @@ function loop() {
 // 개발용: ?map=city 처럼 전장을 지정해 바로 확인한다 (?unlock과 함께 쓴다)
 const mapParam = new URLSearchParams(location.search).get('map');
 if (mapParam && MAPS.some(m => m.id === mapParam)) saveProfile({ ...loadProfile(), map: mapParam });
+const diffParam = new URLSearchParams(location.search).get('diff');
+if (diffParam) saveProfile({ ...loadProfile(), diff: diffParam });
 toSelect();
 requestAnimationFrame(loop);
 
 // 개발 중 화면 확인용: #play는 선택창을 건너뛰고, #sim은 거기에 더해 자동 조준·연사로 미리 진행한다.
 // #sim 뒤에 초를 붙일 수 있다(#sim90). #retry는 재시작 뒤에도 UI가 남는지 확인한다.
 const hash = location.hash.slice(1);
+if (hash === 'ach') document.getElementById('ach-open').click(); // 개발용: 업적 화면 바로 열기
 if (/^(play|sim|retry|die)/.test(hash)) {
   const n = document.getElementById('name'); if (!n.value) { n.value = '테스트'; n.dispatchEvent(new Event('input')); }
   document.getElementById('go').click();

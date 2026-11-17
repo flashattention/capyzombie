@@ -42,10 +42,12 @@
       <h2>이렇게 싸웁니다</h2>
       <div class="cols">
         <div><h3>라이더의 눈으로 쏘기</h3><p>카피바라 등 위 1인칭 시점입니다. 좌클릭 게틀링건과 우클릭 로켓으로 쏘고, Shift를 누른 채 달려 떼를 볼링핀처럼 날려 버립니다.</p></div>
+        <div><h3>난이도 네 단계</h3><p>이지는 가볍게, 노말은 잘 해야, 하드는 정말 잘해야, 익스트림은 깨기 엄청 어렵습니다. 어려울수록 랭킹 점수가 최대 2.5배입니다.</p></div>
         <div><h3>1분마다 보스</h3><p>전장마다 보스 셋이 차례로 나옵니다. 둘째는 거리를 두고 저격·포격·탄막을 쏟아붓는 원거리 보스입니다. 셋을 잡으면 클리어입니다.</p></div>
         <div><h3>귤을 모아 강해지기</h3><p>귤을 모아 레벨을 올리고 강화를 고르세요. 두 강화를 일정 레벨까지 키우면 합성 카드가 나와 훨씬 강한 무기가 됩니다.</p></div>
         <div><h3>끊기지 않는 연속 처치</h3><p>3초 안에 계속 쓰러뜨리면 연속 처치가 쌓이고, 25마리마다 체력을 채워 주는 붉은 귤이 떨어집니다.</p></div>
         <div><h3>열두 가지 좀비</h3><p>방패로 탄을 막고, 동료를 치유하고, 죽으면 갈라지고, 달아올라 들이받고, 독 웅덩이를 남깁니다. 누구를 먼저 잡을지가 승부입니다.</p></div>
+        <div><h3>업적 156개, 칭호 61개</h3><p>처치·생존·수집·정복 업적마다 동·은·금·백금 메달이 걸려 있습니다. 메달과 전체 랭킹 순위로 칭호를 얻어 닉네임 앞에 답니다.</p></div>
         <div><h3>라이더마다 다른 특성</h3><p>오리는 연사가 빠르고, 개구리는 높이 뛰고, 너구리는 경험치를 더 얻습니다. 여덟 마리 중에 고르고 꾸며 주세요.</p></div>
       </div>
     </section>
@@ -60,7 +62,8 @@
         <div><span class="caps"><kbd class="wide">Shift</kbd><kbd>W</kbd></span><b>돌진</b></div>
         <div><span class="caps"><kbd>Q</kbd></span><b>발 구르기</b></div>
         <div><span class="caps"><kbd>E</kbd></span><b>미끼 귤</b></div>
-        <div><span class="caps"><kbd>R</kbd></span><b>궁극기 귤 폭격</b></div>
+        <div><span class="caps"><kbd>R</kbd></span><b>궁극기 미사일 난사</b></div>
+        <div><span class="caps"><kbd>B</kbd></span><b>B2 귤 폭격</b></div>
         <div><span class="caps"><kbd class="wide">Space</kbd></span><b>점프</b></div>
         <div><span class="caps"><kbd>V</kbd></span><b>시점 전환</b></div>
         <div><span class="caps"><kbd class="wide">Esc</kbd></span><b>일시정지</b></div>
@@ -80,7 +83,8 @@
         <dt>게틀링건</dt><dd>좌클릭. 누르고 있는 동안 조준선을 따라 쉬지 않고 쏩니다.</dd><dd class="state now">처음부터</dd>
         <dt>로켓 포드</dt><dd>우클릭. 조준한 곳으로 날아가 떼 한가운데를 터뜨립니다.</dd><dd class="state now">처음부터</dd>
         <dt>발 구르기</dt><dd>Q. 카피바라가 껑충 뛰어 주변 좀비를 날려 버립니다.</dd><dd class="state now">처음부터</dd>
-        <dt>귤 폭격</dt><dd>R 궁극기. 좀비 40마리를 처치하면 충전되어 조준한 일대를 초토화합니다.</dd><dd class="state now">처음부터</dd>
+        <dt>미사일 난사</dt><dd>R 궁극기. 좀비 100마리를 처치하면 충전됩니다. 카피바라 양옆에서 대형 발사기가 솟아올라 조준한 쪽으로 3초간 미사일 60여 발을 쏟아붓습니다.</dd><dd class="state now">처음부터</dd>
+        <dt>B2 귤 폭격</dt><dd>B. 거대한 폭격기가 하늘을 가로지르며 귤 폭탄 수십 발로 길게 초토화합니다.</dd><dd class="state">호출기 획득 시 (보스, 보급 상자)</dd>
         <dt>미끼 귤</dt><dd>E. 커다란 귤을 던져 좀비를 꾀어낸 뒤 터뜨립니다.</dd><dd class="state now">처음부터</dd>
         <dt>맴도는 귤</dt><dd>귤이 주위를 돌며 닿는 좀비를 때립니다.</dd><dd class="state">레벨업 카드</dd>
         <dt>오리 드론</dt><dd>따라다니며 가까운 좀비를 알아서 쏩니다.</dd><dd class="state">레벨업 카드</dd>
@@ -94,7 +98,7 @@
 
     <section class="block">
       <h2>전체 랭킹</h2>
-      <p class="sub">전장마다 점수 상위 10명입니다. 점수는 처치 10점, 생존 1초 2점, 클리어 500점으로 계산합니다.</p>
+      <p class="sub">전장마다 점수 상위 10명입니다. 점수는 처치 10점, 생존 1초 2점, 클리어 500점으로 계산합니다. 10위 안에 들면 「십걸」, 3위 안은 「삼대장」, 1위는 「전설」 칭호를 얻습니다.</p>
       <div class="views" id="rank-tabs" role="group" aria-label="랭킹 전장 선택"></div>
       <ol id="rank-list" class="rank"></ol>
     </section>

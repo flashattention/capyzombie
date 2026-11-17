@@ -11,7 +11,9 @@ async function redis(commands) {
   return (await r.json()).map(x => x.result);
 }
 // 점수는 서버에서 계산한다: 처치 10점, 생존 1초 2점, 클리어 500점
-const scoreOf = (kills, time, cleared) => kills * 10 + Math.floor(time) * 2 + (cleared ? 500 : 0);
+// 난이도 배율: src/difficulty.js의 score와 맞춘다
+const SCORE_MULT = { easy: 0.5, normal: 1, hard: 1.5, extreme: 2.5 };
+const scoreOf = (kills, time, cleared, diff) => Math.round((kills * 10 + Math.floor(time) * 2 + (cleared ? 500 : 0)) * (SCORE_MULT[diff] || 1));
 const cleanName = s => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12);
 
 async function top(map, n = 20) {
@@ -19,7 +21,7 @@ async function top(map, n = 20) {
   if (!ids || !ids.length) return [];
   const keys = ids.filter((_, i) => i % 2 === 0);
   const [details] = await redis([['HMGET', `lbd:${map}`, ...keys]]);
-  return keys.map((id, i) => { let d = {}; try { d = JSON.parse(details[i]) || {}; } catch (e) { /* 무시 */ } return { name: d.name || '이름 없음', score: +ids[i * 2 + 1], kills: d.kills || 0, time: d.time || 0, level: d.level || 1, animal: d.animal || 'duck', cleared: !!d.cleared }; });
+  return keys.map((id, i) => { let d = {}; try { d = JSON.parse(details[i]) || {}; } catch (e) { /* 무시 */ } return { name: d.name || '이름 없음', title: d.title || '', diff: d.diff || 'normal', score: +ids[i * 2 + 1], kills: d.kills || 0, time: d.time || 0, level: d.level || 1, animal: d.animal || 'duck', cleared: !!d.cleared }; });
 }
 
 export default async function handler(req, res) {
@@ -37,12 +39,13 @@ export default async function handler(req, res) {
       const kills = Math.floor(+b.kills), time = +b.time, level = Math.floor(+b.level) || 1;
       // 말이 안 되는 기록은 받지 않는다 (초당 처치 수 상한 등). 클라이언트가 보내는 값이라 완전한 부정 방지는 아니다.
       if (!MAPS.includes(map) || !/^[a-z0-9-]{8,40}$/i.test(id) || name.length < 2 || !(kills >= 0) || !(time > 0) || time > 36000 || kills > time * 25 + 50 || level > 400) return res.status(400).json({ error: 'bad_run' });
-      const score = scoreOf(kills, time, !!b.cleared);
+      const diff = SCORE_MULT[b.diff] ? b.diff : 'normal';
+      const score = scoreOf(kills, time, !!b.cleared, diff);
       const [old] = await redis([['ZSCORE', `lb:${map}`, id]]);
-      const detail = JSON.stringify({ name, kills, time: Math.floor(time), level, animal: String(b.animal || 'duck').slice(0, 12), cleared: !!b.cleared });
+      const detail = JSON.stringify({ name, diff, title: String(b.title || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20), kills, time: Math.floor(time), level, animal: String(b.animal || 'duck').slice(0, 12), cleared: !!b.cleared });
       if (old == null || score > +old) await redis([['ZADD', `lb:${map}`, score, id], ['HSET', `lbd:${map}`, id, detail]]);
       else await redis([['HGET', `lbd:${map}`, id]]).then(async ([d]) => { // 닉네임만 바뀐 경우 반영
-        try { const o = JSON.parse(d); if (o && o.name !== name) { o.name = name; await redis([['HSET', `lbd:${map}`, id, JSON.stringify(o)]]); } } catch (e) { /* 무시 */ }
+        try { const o = JSON.parse(d); if (o && (o.name !== name || o.title !== b.title)) { o.name = name; o.title = String(b.title || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); await redis([['HSET', `lbd:${map}`, id, JSON.stringify(o)]]); } } catch (e) { /* 무시 */ }
       });
       const [rank] = await redis([['ZREVRANK', `lb:${map}`, id]]);
       return res.status(200).json({ rank: rank == null ? null : rank + 1, score, best: Math.max(score, +old || 0), top: await top(map, 10) });

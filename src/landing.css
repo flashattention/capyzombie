@@ -85,6 +85,9 @@ kbd.wide{min-width:4.6em}
 .rank .nm{font:400 1.3rem var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rank .sc{font-weight:600;font-variant-numeric:tabular-nums}
 .rank .dt{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.rank .no.medal{color:#fff;border-radius:50%;width:1.7em;height:1.7em;display:grid;place-items:center;font-size:1.1rem;border:2px solid var(--ink)}
+.rank .no.m0{background:#f2b705}.rank .no.m1{background:#aab4bc}.rank .no.m2{background:#c0703a}
+.rank .ttl{font-style:normal;font-family:var(--body);font-size:.75rem;font-weight:600;color:var(--accent);border:1.5px solid currentColor;border-radius:99px;padding:0 .6em;margin-right:.3em}
 .rank .none{display:block;color:var(--muted);background:transparent;border:0;padding:0}
 .foot{display:flex;flex-direction:column;gap:clamp(18px,2vw,34px);align-items:flex-start}
 

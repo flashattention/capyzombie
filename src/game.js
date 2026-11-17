@@ -12,11 +12,13 @@ import { BASE_STATS, UPGRADES, FUSIONS, rollChoices, xpForLevel, nameOf, recipes
 import { loadProgress, loadAccount, recordRun, fmtTime } from './save.js';
 import { initAudio, setSound, sfx } from './audio.js';
 import { submitRun, renderRank } from './rank.js';
+import { commitRun, awardRank, titleName, TIER } from './achievements.js';
+import { getDiff } from './difficulty.js';
 
 const $ = id => document.getElementById(id);
 const PI = Math.PI, MAX_Z = 420, MAX_B = 320, ARENA = 110;
 const WALK = 5.2, SPRINT = 11, JUMP = 8.8, GRAV = 22, SENS = 0.0022, BULLET = 70;
-const DECOY_CD = 14, ULT_KILLS = 40, BOSS_EVERY = 60, BOSSES_TO_CLEAR = 3, COMBO_TIME = 3, CRATE_EVERY = 38, BUFF_TIME = 12;
+const DECOY_CD = 14, ULT_KILLS = 100, BARRAGE_TIME = 3.2, BOSS_EVERY = 60, BOSSES_TO_CLEAR = 3, COMBO_TIME = 3, CRATE_EVERY = 38, BUFF_TIME = 12;
 const CHEERS = ['좋아요!', '멈추지 마세요!', '대학살!', '카피바라 폭주!', '전설의 라이더!'];
 const BUFFS = [{ id: 'double', name: '두 배 화력' }, { id: 'rapid', name: '폭풍 연사' }, { id: 'shield', name: '귤 방패' }, { id: 'feast', name: '귤 잔치' }];
 const MINT = new T.Color(0x7dffb0), HOT = new T.Color(2.2, 0.5, 0.4), WHITE = new T.Color(1, 1, 1), HIT = new T.Color(2.4, 2.4, 2.4), GOLD = new T.Color(1.7, 1.35, 0.45), ICE = new T.Color(0.6, 0.85, 1.6);
@@ -29,7 +31,8 @@ export function createGame(renderer, profile, onExit) {
   initAudio(); setSound(progress.settings.sound !== false);
   // 난이도: 뒤 전장일수록 좀비가 단단하고 아프다. 시간이 갈수록 더 단단해진다.
   // 체력 ×1.4, 공격력 ×1.2씩 곱으로 오르고, 수와 속도·정예 비율도 는다. 대신 뒤 전장은 강화 카드를 미리 뽑고 시작한다.
-  const hpMap = Math.pow(1.32, mapIdx), dmgMul = Math.pow(1.15, mapIdx), spdMap = 1 + 0.04 * mapIdx, spawnMul = 1 + 0.12 * mapIdx, eliteP = 0.04 + 0.015 * mapIdx;
+  const D = getDiff(profile.diff); // 난이도(이지·노말·하드·익스트림) 배율을 전장 배율에 곱한다
+  const hpMap = Math.pow(1.32, mapIdx) * D.hp, dmgMul = Math.pow(1.15, mapIdx) * D.dmg, spdMap = 1 + 0.04 * mapIdx, spawnMul = (1 + 0.12 * mapIdx) * D.spawn, eliteP = Math.max(0, 0.04 + 0.015 * mapIdx + D.elite);
   let freePicks = mapIdx * 3, rerolls = 2;
 
   // 좀비 종류: 맵의 6종 + 보스(탱커의 거대 버전에 고유 패턴)
@@ -105,14 +108,64 @@ export function createGame(renderer, profile, onExit) {
   const pillarMat = new T.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.28, depthWrite: false });
   const pillar = new T.Mesh(new T.CylinderGeometry(0.7, 0.7, 60, 8, 1, true), pillarMat); pillar.position.y = 30; crate.add(pillar); crate.visible = false; scene.add(crate);
   const decoyM = new T.Group(); add(decoyM, ell(0.9, 0.8, 0.9, 0xf7931e)); add(decoyM, ell(0.4, 0.1, 0.2, 0x4f8a3c), 0.2, 0.85, 0); add(decoyM, box(0.5, 0.12, 0.05, 0x1d1512, { flat: 1 }), 0, 0.15, 0.88); decoyM.visible = false; scene.add(decoyM);
+  // R 궁극기: B2 귤 폭격기. 넓은 전익기가 하늘을 가로지르며 귤 폭탄을 쏟아붓는다.
+  const bomber = new T.Group();
+  add(bomber, ell(5.5, 0.8, 2.6, 0x3a3f4a)); add(bomber, ell(1.6, 0.5, 1.1, 0x7df9ff, { flat: 1 }), 2.6, 0.45, 0);
+  [1, -1].forEach(s => {
+    const w = add(bomber, box(11, 0.35, 4.2, 0x3a3f4a), -2.4, 0, s * 6.2); w.rotation.y = s * 0.62;
+    const t = add(bomber, box(5, 0.3, 2.4, 0x2f333d), -6.2, 0, s * 12.2); t.rotation.y = s * 0.62;
+    add(bomber, cyl(0.6, 2.6, 0x23252f, { axis: 'x' }), -1.5, -0.35, s * 2.4); add(bomber, ell(0.5, 0.5, 0.5, 0xffa94d, { flat: 1 }), -3, -0.35, s * 2.4);
+  });
+  add(bomber, ell(1.1, 0.3, 1.1, 0xf7931e), -0.5, 0.75, 0); // 귤 문양
+  bomber.traverse(m => { if (m.isMesh) m.receiveShadow = false; }); bomber.visible = false; scene.add(bomber);
+  const bombMesh = inst(new T.IcosahedronGeometry(0.6, 1), new T.MeshStandardMaterial({ color: 0xf7931e, flatShading: true }), 60), bombs = [];
+  let raid = null;
+  // R 궁극기 미사일 난사: 카피바라 양옆에서 대형 발사기가 솟아올라 조준한 쪽으로 몇 초간 쏟아붓는다
+  const pods = [1, -1].map(s => {
+    const g = new T.Group(); add(g, box(1.0, 0.7, 0.8, 0x3a3f4a)); add(g, box(0.2, 0.9, 0.2, 0x2f363c), -0.2, -0.75, 0); add(g, box(1.02, 0.14, 0.82, 0xd9523a), 0, 0.2, 0);
+    for (let i = 0; i < 6; i++) { add(g, cyl(0.11, 0.06, 0x1d1512, { axis: 'x' }), 0.51, (i < 3 ? 0.16 : -0.16), (i % 3 - 1) * 0.24); add(g, cone(0.08, 0.14, 0xfff1d6, { axis: 'x' }), 0.56, (i < 3 ? 0.16 : -0.16), (i % 3 - 1) * 0.24); }
+    g.muzzle = new T.Object3D(); add(g, g.muzzle, 0.7, 0, 0);
+    add(U.body, g, 0.55, 1.05, s * 1.25); g.scale.setScalar(0.001); g.visible = false; return g;
+  });
+  let barrage = 0, barrageAcc = 0, podSide = 0;
+  // B2 폭격 호출기: 보스가 떨어뜨리거나 보급 상자에서 나온다. 주우면 B 키로 폭격기를 부른다 (최대 3개)
+  const b2Items = [];
+  let b2 = 0;
+  function dropB2(x, z) {
+    const g = new T.Group();
+    add(g, ell(0.5, 0.12, 0.3, 0x3a3f4a), 0, 0.9, 0); [1, -1].forEach(s => { const w = add(g, box(0.9, 0.06, 0.4, 0x3a3f4a), -0.15, 0.9, s * 0.5); w.rotation.y = s * 0.6; });
+    add(g, ell(0.14, 0.14, 0.14, 0xf7931e), 0, 1.02, 0);
+    const glow = new T.Mesh(new T.CylinderGeometry(0.6, 0.6, 30, 8, 1, true), new T.MeshBasicMaterial({ color: 0x7df9ff, transparent: true, opacity: 0.25, depthWrite: false })); glow.position.y = 15; g.add(glow);
+    g.position.set(x, 0, z); scene.add(g); b2Items.push(g);
+  }
   let crateOn = false, crateLife = 0, crateT = 25, buff = null, buffT = 0, decoy = null;
+  // 체력 물약: 맵 곳곳에 주기적으로 생기고, 체력이 깎였을 때 닿으면 최대 체력의 35%를 회복한다
+  const POTION_MAX = 5, POTION_EVERY = D.potion, potions = [];
+  let potionT = 8;
+  function makePotion() {
+    const g = new T.Group();
+    add(g, ell(0.34, 0.34, 0.34, 0xe03131), 0, 0.36, 0); add(g, cyl(0.12, 0.26, 0xffd6d6), 0, 0.78, 0); add(g, cyl(0.15, 0.1, 0x9a7447), 0, 0.95, 0);
+    add(g, box(0.3, 0.09, 0.02, 0xffffff, { flat: 1 }), 0, 0.38, 0.33); add(g, box(0.09, 0.3, 0.02, 0xffffff, { flat: 1 }), 0, 0.38, 0.335);
+    const glow = new T.Mesh(new T.CylinderGeometry(0.5, 0.5, 14, 8, 1, true), new T.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.22, depthWrite: false })); glow.position.y = 7; g.add(glow);
+    scene.add(g); return g;
+  }
   let level = 1, xp = 0, paused = false, choices = [];
+  // 업적용 이번 판 기록. commit()이 누적 통계에 더하고, 새로 달성한 업적과 칭호를 돌려준다.
+  const RS = { roles: {}, boss: 0, elite: 0, ram: 0, rocket: 0, crates: 0, potions: 0, hearts: 0, pads: 0, gems: 0, fusions: [] };
+  let cBase = { kills: 0, time: 0 }, cFirst = true;
+  function commit(won, died) {
+    const res = commitRun({ ...RS, kills: kills - cBase.kills, time: time - cBase.time, runTime: time, combo: maxCombo, level, cleared: won, died, map: map.id, diff: D.id, animal: profile.animal, first: cFirst });
+    cBase = { kills, time }; cFirst = false;
+    RS.roles = {}; RS.fusions = []; RS.boss = RS.elite = RS.ram = RS.rocket = RS.crates = RS.potions = RS.hearts = RS.pads = RS.gems = 0;
+    return res;
+  }
+  const myTitle = titleName();
 
   // ── 입력: 마우스 조준(포인터 잠금) + 키보드, 터치는 왼쪽 이동·오른쪽 조준 ──
   const canvas = renderer.domElement, keys = {};
   const stick = { x: 0, y: 0, id: null, o: null }, look = { id: null, last: null };
   let jumpQueued = false, fireHeld = false, rocketHeld = false, locked = false, touchMode = false, autoAim = false, menuOpen = false;
-  const want = { q: false, e: false, r: false };
+  const want = { q: false, e: false, r: false, b: false };
   const setMenu = on => { menuOpen = on; $('pause').hidden = !on; if (on) renderBuild(); $('cross').hidden = on || paused || over; if (on) { fireHeld = rocketHeld = false; for (const k in keys) keys[k] = false; } };
   const lockNow = () => { if (!touchMode && !over && !paused && document.pointerLockElement !== canvas) { const p = canvas.requestPointerLock?.(); if (p && p.catch) p.catch(() => {}); } };
   const onLock = () => { locked = document.pointerLockElement === canvas; if (!touchMode) setMenu(!locked && !over && !paused); };
@@ -124,6 +177,7 @@ export function createGame(renderer, profile, onExit) {
       if (e.code === 'KeyQ') want.q = true;
       if (e.code === 'KeyE') want.e = true;
       if (e.code === 'KeyR') want.r = true;
+      if (e.code === 'KeyB') want.b = true;
       if (e.code === 'KeyP' && touchMode && !over && !paused) setMenu(!menuOpen);
     }
     keys[e.code] = true;
@@ -139,9 +193,11 @@ export function createGame(renderer, profile, onExit) {
       else jumpQueued = true;
       return;
     }
-    if (!locked) { lockNow(); return; }
-    if (e.button === 0) fireHeld = true; if (e.button === 2) rocketHeld = true;
   };
+  // 마우스 버튼은 mousedown/mouseup으로 받는다. pointerdown은 버튼 하나를 누른 상태에서 다른 버튼을 눌러도
+  // 다시 발생하지 않아서, 게틀링을 쏘는 중에는 우클릭 로켓이 나가지 않았다.
+  const mdn = e => { if (touchMode) return; if (!locked) { lockNow(); return; } if (e.button === 0) fireHeld = true; if (e.button === 2) rocketHeld = true; };
+  const mup = e => { if (e.button === 0) fireHeld = false; if (e.button === 2) rocketHeld = false; };
   const mv = e => {
     if (e.pointerId === stick.id) { const dx = e.clientX - stick.o[0], dy = e.clientY - stick.o[1], l = Math.hypot(dx, dy); stick.x = l > 8 ? dx / Math.max(l, 60) : 0; stick.y = l > 8 ? dy / Math.max(l, 60) : 0; }
     else if (e.pointerId === look.id) { P.yaw -= (e.clientX - look.last[0]) * 0.006; P.pitch = Math.max(-1.2, Math.min(1.1, P.pitch - (e.clientY - look.last[1]) * 0.006)); look.last = [e.clientX, e.clientY]; }
@@ -149,18 +205,17 @@ export function createGame(renderer, profile, onExit) {
   const mu = e => {
     if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; }
     else if (e.pointerId === look.id) { look.id = null; fireHeld = false; }
-    else if (e.pointerType !== 'touch') { if (e.button === 0) fireHeld = false; if (e.button === 2) rocketHeld = false; }
   };
   const noMenu = e => e.preventDefault();
   window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
   document.addEventListener('mousemove', mm); document.addEventListener('pointerlockchange', onLock);
   canvas.addEventListener('pointerdown', md); window.addEventListener('pointermove', mv); window.addEventListener('pointerup', mu); window.addEventListener('pointercancel', mu);
-  canvas.addEventListener('contextmenu', noMenu);
+  canvas.addEventListener('contextmenu', noMenu); canvas.addEventListener('mousedown', mdn); window.addEventListener('mouseup', mup);
 
   // ── HUD와 메뉴 버튼 ──
   const SHOW = ['hud', 'xp', 'help', 'cross', 'skills', 'wave', 'radar'], ALL = [...SHOW, 'tag', 'over', 'levelup', 'pause', 'boss', 'combo', 'banner', 'pause-btn', 'buff'];
   ALL.forEach(id => { $(id).hidden = true; }); SHOW.forEach(id => { $(id).hidden = false; });
-  $('hud-name').textContent = profile.name; $('tag').textContent = profile.name; $('map-name').textContent = `${map.name} · ${R.label} (${R.perk})`;
+  $('hud-name').textContent = `[${myTitle}] ${profile.name}`; $('tag').textContent = profile.name; $('map-name').textContent = `${map.name} · ${D.name} · ${R.label} (${R.perk})`;
   const toMain = () => { location.href = '/'; };
   const handlers = [
     ['retry', () => onExit('retry')], ['back', () => onExit('select')], ['next', () => onExit('next')], ['endless', () => goEndless()],
@@ -228,11 +283,13 @@ export function createGame(renderer, profile, onExit) {
   // 처치. power가 있으면 (fx,fz) 방향으로 날려 보낸다.
   function kill(i, fx, fz, power = 0) {
     const q = zs[i], Z = ZT[q.type];
+    if (Z.boss) RS.boss++; else { RS.roles[Z.role] = (RS.roles[Z.role] || 0) + 1; if (q.elite) RS.elite++; }
     if (Z.boss) {
       boss = null; bossKills++; $('boss').hidden = true; magnetT = 4; shake = 0.5; sfx.boom();
       boom(q.x, 2.5, q.z, 0xffe066, 9); burst(q.x, 3, q.z, zColor[q.type][0], 40, 14);
       for (let k = 0; k < 14 && gems.length < 400; k++) gems.push({ x: q.x + (Math.random() - 0.5) * 6, y: q.y, z: q.z + (Math.random() - 0.5) * 6, v: 4, ph: Math.random() * 6 });
       gems.push({ x: q.x, y: q.y, z: q.z, heart: true, ph: 0 });
+      dropB2(q.x + 1.5, q.z);
       rerolls++;
       if (bossKills >= BOSSES_TO_CLEAR && !endless) winPending = true; else banner(`보스 처치! 웨이브 ${bossKills + 1}`);
     } else {
@@ -290,7 +347,7 @@ export function createGame(renderer, profile, onExit) {
     const u = choices[i]; if (!paused || !u) return;
     if (u.gear && !levels[u.id]) addGear(capy, u.gear);
     levels[u.id] = (levels[u.id] || 0) + 1; u.apply(S, P);
-    if (u.fusion) { banner(`합성 완료! ${u.name}`); sfx.clear(); }
+    if (u.fusion) { RS.fusions.push(u.id); banner(`합성 완료! ${u.name}`); sfx.clear(); }
     paused = false; choices = []; $('levelup').hidden = true; $('cross').hidden = false;
     if (freePicks > 0 && --freePicks > 0 && offer()) return;
     if (xp >= xpForLevel(level)) { xp -= xpForLevel(level); levelUp(); }
@@ -308,9 +365,14 @@ export function createGame(renderer, profile, onExit) {
     over = true; fireHeld = rocketHeld = false;
     if (document.pointerLockElement === canvas) document.exitPointerLock();
     const better = recordRun(map.id, time, kills, won), best = loadProgress().best[map.id];
+    // 업적과 칭호
+    const gain = commit(won, !won), achEl = $('over-ach');
+    achEl.innerHTML = gain.newTitles.map(t => `<li class="tt">새 칭호 「${t.name}」</li>`).join('')
+      + gain.newAch.slice(0, 8).map(a => `<li><span class="md t${a.tier}">${TIER[a.tier].name}</span>${a.name}</li>`).join('')
+      + (gain.newAch.length > 8 ? `<li class="more">외 ${gain.newAch.length - 8}개 업적 달성</li>` : '');
     const next = MAPS[mapIdx + 1];
-    $('over-title').textContent = won ? `${map.name} 클리어!` : '좀비에게 따라잡혔어요';
-    $('over-stats').textContent = `${profile.name}: ${fmtTime(time)} 생존 · 레벨 ${level} · 좀비 ${kills}마리 · 최고 ${maxCombo} 연속`;
+    $('over-title').textContent = won ? `${map.name} ${D.name} 클리어!` : '좀비에게 따라잡혔어요';
+    $('over-stats').textContent = `${profile.name} (${D.name}): ${fmtTime(time)} 생존 · 레벨 ${level} · 좀비 ${kills}마리 · 최고 ${maxCombo} 연속`;
     $('over-best').textContent = (better ? '새 기록! ' : '') + `내 최고 기록: ${fmtTime(best.time)} · ${best.kills}마리`
       + (won && next ? ` · 「${next.name}」이 열렸습니다` : '') + (won && mapIdx < 3 ? ' · 새 후반 장비가 레벨업 카드에 등장합니다' : '');
     $('next').hidden = !(won && next); $('endless').hidden = !won; $('retry').hidden = won;
@@ -318,9 +380,11 @@ export function createGame(renderer, profile, onExit) {
     if (won) sfx.clear(); else sfx.over();
     // 전체 랭킹에 올리고 결과를 보여준다
     const rankEl = $('over-rank'), rankNote = $('over-rank-note'); rankEl.innerHTML = ''; rankNote.textContent = `${map.name} 전체 랭킹에 올리는 중…`;
-    submitRun({ map: map.id, id: account.id, name: profile.name, kills, time: Math.floor(time), level, animal: profile.animal, cleared: won }).then(r => {
+    submitRun({ map: map.id, diff: D.id, id: account.id, name: profile.name, title: titleName(), kills, time: Math.floor(time), level, animal: profile.animal, cleared: won }).then(r => {
       if (!r) { rankNote.textContent = '랭킹 서버에 연결할 수 없어 이 기록은 이 기기에만 저장했습니다.'; return; }
       rankNote.textContent = `${map.name} 전체 랭킹 ${r.rank}위 · 이번 판 ${r.score.toLocaleString()}점 (내 최고 ${r.best.toLocaleString()}점)`;
+      const rk = awardRank(map.id, r.rank); // 순위로 얻는 칭호
+      if (rk.newTitles.length) achEl.insertAdjacentHTML('afterbegin', rk.newTitles.map(t => `<li class="tt">새 칭호 「${t.name}」</li>`).join(''));
       renderRank(rankEl, r.top, 5, profile.name);
     });
   }
@@ -405,7 +469,7 @@ export function createGame(renderer, profile, onExit) {
       if (!P.grounded && P.vy < -7) { blast(P.x, g, P.z, 2.2 + Math.min(3, -P.vy * 0.12), 6, 0xfff1d6); shake = 0.25; sfx.stomp(); } // 착지 충격파
       P.y = g; P.vy = 0; P.grounded = true;
     } else P.grounded = false;
-    if (P.grounded && P.y < 0.3) for (const pad of world.pads) if ((P.x - pad.x) ** 2 + (P.z - pad.z) ** 2 < pad.r * pad.r) { P.vy = 17; P.grounded = false; sfx.jump(); break; }
+    if (P.grounded && P.y < 0.3) for (const pad of world.pads) if ((P.x - pad.x) ** 2 + (P.z - pad.z) ** 2 < pad.r * pad.r) { RS.pads++; P.vy = 17; P.grounded = false; sfx.jump(); break; }
     let bathing = false;
     if (P.y < 0.5) for (const pl of world.pools) if ((P.x - pl.x) ** 2 + (P.z - pl.z) ** 2 < pl.r * pl.r) { bathing = true; P.hp = Math.min(S.maxHp, P.hp + 7 * dt); break; }
     capy.position.set(P.x, P.y, P.z); capy.rotation.y = P.yaw;
@@ -439,7 +503,7 @@ export function createGame(renderer, profile, onExit) {
           if (q.hit <= 0) { q.hp -= S.ramDmg; q.hit = 0.25; sfx.hit(); }
           if (Z.boss) { P.x += pdx / pd * 0.6; P.z += pdz / pd * 0.6; damage(Z.dps * dmgMul * dt * 0.5); } else { q.x -= pdx / pd * 1.2; q.z -= pdz / pd * 1.2; }
           P.stamina = Math.max(0, P.stamina - 0.08);
-        } else { kill(i, -pdx / pd + mx * 0.6, -pdz / pd + mz * 0.6, 7); continue; }
+        } else { RS.ram++; kill(i, -pdx / pd + mx * 0.6, -pdz / pd + mz * 0.6, 7); continue; }
       } else if (touching) {
         touchDmg += Z.dps * dmgMul * dt;
         if (S.thorns) { q.hp -= S.thorns * 8 * dt; if (q.hp <= 0) { kill(i, -pdx / pd, -pdz / pd, 3); continue; } } // 가시 갑옷
@@ -457,7 +521,7 @@ export function createGame(renderer, profile, onExit) {
         const ta = 2 * 8.5 / GRAV, k = Math.min(1, 14 * ta / pd); q.air = true; q.cd = 3.5; q.vy = 8.5; q.lx = pdx / ta * k; q.lz = pdz / ta * k;
       } else if (d > (lure ? 1.2 : 0)) { q.x += dx / d * sp * dt; q.z += dz / d * sp * dt; }
       if (Z.boss) {
-        if (q.cd <= 0) { q.cd = (q.hp < q.maxHp * 0.5 ? 3.4 : 5.2) / (1 + 0.07 * mapIdx); bossAct(q); } // 체력이 절반 아래면 더 자주 쓴다
+        if (q.cd <= 0) { q.cd = (q.hp < q.maxHp * 0.5 ? 3.4 : 5.2) / (1 + 0.07 * mapIdx) * D.bossCd; bossAct(q); } // 체력이 절반 아래면 더 자주 쓴다
         const hy = q.y + Z.s * 1.1;
         if (q.snipe > 0 && (q.st -= dt) <= 0) { q.st = 0.17; q.snipe--; es.push({ x: q.x, y: hy, z: q.z, vx: pdx / pd * 24, vy: (P.y + 1.2 - hy) / (pd / 24), vz: pdz / pd * 24, life: 3 }); } // 저격: 빠른 조준탄 연사
         if (q.spiral > 0) { q.spiral -= dt; if ((q.st2 -= dt) <= 0) { q.st2 = 0.1; for (let k = 0; k < 3; k++) { const a = time * 2.6 + k * PI * 2 / 3; if (es.length < 380) es.push({ x: q.x, y: P.y + 1.2, z: q.z, vx: Math.cos(a) * 8.5, vy: 0, vz: Math.sin(a) * 8.5, life: 4.5 }); } } } // 탄막: 세 갈래 나선
@@ -624,7 +688,7 @@ export function createGame(renderer, profile, onExit) {
       r.m.rotation.y = Math.atan2(-r.vz, r.vx); r.m.rotation.z = Math.atan2(r.vy, Math.hypot(r.vx, r.vz));
       let hit = p.y <= 0.1 || r.life <= 0 || plats.some(b => p.x > b.x0 && p.x < b.x1 && p.z > b.z0 && p.z < b.z1 && p.y < b.top && p.y > b.base);
       for (let j = 0; j < zs.length && !hit; j++) { const q = zs[j], Z = ZT[q.type], rr = Z.radius + 0.5; if ((q.x - p.x) ** 2 + (q.z - p.z) ** 2 < rr * rr && p.y > q.y - 0.3 && p.y < q.y + Z.s * 1.6 + 0.4) hit = true; }
-      if (hit) { blast(p.x, Math.max(0, p.y - 0.6), p.z, S.rocketR, 8 * dmgBuff, S.frost ? 0x8fe0ff : 0xffa94d, S.frost ? (S.freeze ? 3 : 1.5 + S.frost) : 0); sfx.boom(); shake = Math.max(shake, 0.12); scene.remove(r.m); rockets.splice(i, 1); }
+      if (hit) { const k0 = kills; blast(p.x, Math.max(0, p.y - 0.6), p.z, r.rad || S.rocketR, (r.dmg || S.rocketDmg) * dmgBuff, S.frost ? 0x8fe0ff : 0xffa94d, S.frost ? (S.freeze ? 3 : 1.5 + S.frost) : 0); RS.rocket += kills - k0; sfx.boom(); shake = Math.max(shake, 0.12); scene.remove(r.m); rockets.splice(i, 1); }
     }
 
     // ── Q 발 구르기: 카피바라가 껑충 뛰어 주변 좀비를 날린다 ──
@@ -646,10 +710,44 @@ export function createGame(renderer, profile, onExit) {
       if (decoy.t <= 0) { blast(decoy.x, 0, decoy.z, 5 + S.decoyUp, (12 + 10 * S.decoyUp) * dmgBuff, 0xf7931e); sfx.boom(); shake = Math.max(shake, 0.25); decoy = null; decoyM.visible = false; }
     }
     // ── R 궁극기 귤 폭격: 처치로 충전, 조준한 지점 일대에 폭발을 쏟아붓는다 ──
-    if (want.r && ult >= ULT_KILLS) {
-      ult = 0; sfx.ult(); banner('귤 폭격!');
-      const tt = fwd.y < -0.05 ? Math.min(30, -eye.y / fwd.y) : 18, cx = eye.x + fwd.x * tt, cz = eye.z + fwd.z * tt;
-      for (let k = 0; k < 14; k++) { const a = Math.random() * PI * 2, r = Math.sqrt(Math.random()) * 7; strikes.push({ t: k * 0.12, x: cx + Math.cos(a) * r, y: 0, z: cz + Math.sin(a) * r, r: S.rocketR * 1.25, dmg: 14, color: 0xf7931e }); }
+    if (want.r && ult >= ULT_KILLS && barrage <= 0) { ult = 0; barrage = BARRAGE_TIME; sfx.ult(); banner('미사일 난사!'); pods.forEach(g => { g.visible = true; }); }
+    if (barrage > 0) {
+      barrage -= dt; barrageAcc += dt; shake = Math.max(shake, 0.08);
+      pods.forEach(g => { g.scale.setScalar(Math.min(1, g.scale.x + dt * 6)); g.rotation.z = P.pitch * 0.8; });
+      while (barrageAcc > 0.05) { // 초당 20발, 좌우 발사기에서 번갈아
+        barrageAcc -= 0.05; const g = pods[podSide ^= 1]; g.muzzle.getWorldPosition(v);
+        const dx = aim.x - v.x, dy = aim.y - v.y, dz = aim.z - v.z, d = Math.hypot(dx, dy, dz) || 1, sx = (Math.random() - 0.5) * 0.14, sy = (Math.random() - 0.5) * 0.08;
+        const m = new T.Group(); add(m, cyl(0.13, 0.7, 0xfff1d6, { axis: 'x' })); add(m, cone(0.13, 0.26, 0xd9523a, { axis: 'x' }), 0.48, 0, 0); add(m, cone(0.16, 0.5, 0xffa94d, { axis: 'x', flat: 1 }), -0.6, 0, 0).rotation.z = PI / 2;
+        m.position.copy(v); m.rotation.order = 'YZX'; scene.add(m);
+        rockets.push({ m, vx: (dx - dz * sx) / d * 36, vy: (dy / d + sy) * 36, vz: (dz + dx * sx) / d * 36, life: 2, dmg: 18, rad: 2.8 });
+        sfx.rocket();
+      }
+      if (barrage <= 0) barrageAcc = 0;
+    } else pods.forEach(g => { if (g.visible) { g.scale.setScalar(g.scale.x - dt * 5); if (g.scale.x <= 0.05) { g.visible = false; g.scale.setScalar(0.001); } } });
+    // ── B: B2 귤 폭격 (호출기를 주워야 쓸 수 있다) ──
+    for (let i = b2Items.length - 1; i >= 0; i--) {
+      const g = b2Items[i]; g.rotation.y += dt * 1.2; g.position.y = Math.sin(time * 2 + i) * 0.15;
+      if ((P.x - g.position.x) ** 2 + (P.z - g.position.z) ** 2 < 3 && P.y < 3 && b2 < 3) { b2++; scene.remove(g); b2Items.splice(i, 1); sfx.level(); banner('B2 폭격 호출기! B 키로 부르세요'); }
+    }
+    if (want.b && b2 > 0 && !raid) {
+      b2--; sfx.ult(); sfx.boss(); banner('B2 귤 폭격!');
+      // 바라보는 방향으로, 조준한 지점을 가운데에 두고 60m 길이로 융단 폭격한다
+      const tt = fwd.y < -0.05 ? Math.min(34, -eye.y / fwd.y) : 22, hl = Math.hypot(fwd.x, fwd.z) || 1, dx = fwd.x / hl, dz = fwd.z / hl;
+      raid = { cx: eye.x + fwd.x * tt, cz: eye.z + fwd.z * tt, dx, dz, s: -95, drop: 0 };
+      bomber.visible = true; bomber.rotation.y = Math.atan2(-dz, dx);
+    }
+    if (raid) {
+      raid.s += 48 * dt; raid.drop -= dt;
+      bomber.position.set(raid.cx + raid.dx * raid.s, 27, raid.cz + raid.dz * raid.s); bomber.rotation.x = Math.sin(time * 2) * 0.04;
+      if (Math.abs(raid.s) < 30 && raid.drop <= 0 && bombs.length < 60) {
+        raid.drop = 0.045; const side = (Math.random() - 0.5) * 16;
+        bombs.push({ x: bomber.position.x - raid.dz * side, y: 26, z: bomber.position.z + raid.dx * side, vy: -4, vx: raid.dx * 14, vz: raid.dz * 14 });
+      }
+      if (raid.s > 110) { raid = null; bomber.visible = false; }
+    }
+    for (let i = bombs.length - 1; i >= 0; i--) {
+      const b = bombs[i]; b.vy -= 32 * dt; b.y += b.vy * dt; b.x += b.vx * dt; b.z += b.vz * dt;
+      if (b.y <= 0.4) { blast(b.x, 0, b.z, S.rocketR * 1.5, 45 * dmgBuff, 0xf7931e); sfx.boom(); shake = Math.max(shake, 0.3); bombs[i] = bombs[bombs.length - 1]; bombs.pop(); }
     }
     // 예약된 폭발: 궁극기 탄착과 폭탄 좀비의 연쇄 폭발
     for (let i = strikes.length - 1; i >= 0; i--) {
@@ -658,7 +756,7 @@ export function createGame(renderer, profile, onExit) {
       strikes.splice(i, 1); blast(s.x, s.y, s.z, s.r, s.dmg, s.color); sfx.boom(); shake = Math.max(shake, 0.2);
       if (s.hurt && Math.hypot(P.x - s.x, P.z - s.z) < s.r && Math.abs(P.y - s.y) < 2) damage(16 * dmgMul);
     }
-    want.q = want.e = want.r = false;
+    want.q = want.e = want.r = want.b = false;
 
     // ── 보급 상자: 주기적으로 떨어지고, 먹으면 잠시 강해진다 ──
     crateT -= dt;
@@ -673,11 +771,29 @@ export function createGame(renderer, profile, onExit) {
     if (crateOn) {
       crateLife -= dt; crate.rotation.y += dt; crate.position.y = 0.8 + Math.sin(time * 3) * 0.15;
       if ((P.x - crate.position.x) ** 2 + (P.z - crate.position.z) ** 2 < 3.2 && P.y < 3) {
-        crateOn = false; crate.visible = false; buff = BUFFS[Math.floor(Math.random() * BUFFS.length)]; buffT = BUFF_TIME; banner(buff.name + '!'); sfx.level();
-        if (buff.id === 'feast') magnetT = BUFF_TIME;
+        RS.crates++; crateOn = false; crate.visible = false; sfx.level();
+        if (Math.random() < 0.22 && b2 < 3) { b2++; banner('B2 폭격 호출기! B 키로 부르세요'); }
+        else { buff = BUFFS[Math.floor(Math.random() * BUFFS.length)]; buffT = BUFF_TIME; banner(buff.name + '!'); if (buff.id === 'feast') magnetT = BUFF_TIME; }
       } else if (crateLife <= 0) { crateOn = false; crate.visible = false; }
     }
     if (buff) { buffT -= dt; if (buffT <= 0) buff = null; }
+    // ── 체력 물약 ──
+    potionT -= dt;
+    if (potionT <= 0 && potions.length < POTION_MAX) {
+      potionT = POTION_EVERY;
+      for (let k = 0; k < 10; k++) {
+        const a = Math.random() * PI * 2, d = 12 + Math.random() * 30, x = clampA(P.x + Math.cos(a) * d), z = clampA(P.z + Math.sin(a) * d);
+        if (plats.some(b => x > b.x0 - 1 && x < b.x1 + 1 && z > b.z0 - 1 && z < b.z1 + 1)) continue;
+        const m = makePotion(); m.position.set(x, 0, z); potions.push(m); break;
+      }
+    }
+    for (let i = potions.length - 1; i >= 0; i--) {
+      const m = potions[i]; m.rotation.y += dt * 1.5; m.position.y = 0.15 + Math.sin(time * 2.5 + i) * 0.12;
+      if (P.hp < S.maxHp && (P.x - m.position.x) ** 2 + (P.z - m.position.z) ** 2 < 2.6 && P.y < 2.5) {
+        RS.potions++; P.hp = Math.min(S.maxHp, P.hp + S.maxHp * 0.35); sfx.heart(); banner('체력 물약!'); burst(m.position.x, 1, m.position.z, new T.Color(0xff8fa3), 10, 5);
+        scene.remove(m); potions.splice(i, 1);
+      }
+    }
 
     for (let i = booms.length - 1; i >= 0; i--) {
       const b = booms[i]; b.t += dt; const k = b.t / 0.3;
@@ -696,7 +812,7 @@ export function createGame(renderer, profile, onExit) {
       const q = gems[i], dx = P.x - q.x, dz = P.z - q.z, d = Math.hypot(dx, dz) || 1;
       q.ph += dt * 4;
       if (d < 0.9 && Math.abs(P.y - q.y) < 2.5) {
-        if (q.heart) { P.hp = Math.min(S.maxHp, P.hp + 15); sfx.heart(); } else { xp += q.v * xpGain; sfx.pickup(); }
+        if (q.heart) { RS.hearts++; P.hp = Math.min(S.maxHp, P.hp + 15); sfx.heart(); } else { RS.gems++; xp += q.v * xpGain; sfx.pickup(); }
         gems[i] = gems[gems.length - 1]; gems.pop(); continue;
       }
       if (d < reach) { const sp = magnetT > 0 ? 30 : 15; q.x += dx / d * sp * dt; q.z += dz / d * sp * dt; q.y += (P.y - q.y) * Math.min(1, dt * 8); }
@@ -725,7 +841,7 @@ export function createGame(renderer, profile, onExit) {
     zMesh.forEach((m, i) => { m.count = counts[i]; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; });
     dummy.rotation.set(0, 0, 0);
     const fill = (mesh, list, y, cap, sc) => { const n = Math.min(list.length, cap); for (let i = 0; i < n; i++) { const b = list[i]; dummy.position.set(b.x, b.y + y, b.z); if (sc) dummy.scale.set(sc(b), 1, sc(b)); dummy.updateMatrix(); mesh.setMatrixAt(i, dummy.matrix); } mesh.count = n; mesh.instanceMatrix.needsUpdate = true; dummy.scale.setScalar(1); };
-    fill(bMesh, bs, 0, MAX_B); fill(eMesh, es, 0, 400);
+    fill(bMesh, bs, 0, MAX_B); fill(eMesh, es, 0, 400); fill(bombMesh, bombs, 0, 60);
     fill(tMesh, puddles, 0.05, 40, p => 2.2 * Math.min(1, p.life)); fill(mMesh, marks, 0.06, 24, m => m.r * (0.4 + 0.6 * Math.max(0, 1 - m.t / 1.4)));
     fires.forEach((f, i) => { dummy.position.set(f.x, f.y + 0.5, f.z); dummy.scale.set(1, (0.5 + Math.random() * 0.6) * Math.min(1, f.life), 1); dummy.updateMatrix(); fMesh.setMatrixAt(i, dummy.matrix); });
     fMesh.count = fires.length; fMesh.instanceMatrix.needsUpdate = true; dummy.scale.setScalar(1);
@@ -771,6 +887,7 @@ export function createGame(renderer, profile, onExit) {
     $('kills').textContent = kills;
     $('time').textContent = fmtTime(time);
     const slot = (id, wait) => { const el = $(id); el.style.setProperty('--wait', Math.max(0, Math.min(1, wait)) * 100 + '%'); el.classList.toggle('ready', wait <= 0); };
+    slot('sk-b', b2 > 0 ? 0 : 1); $('sk-b-n').textContent = 'B2 폭격 ×' + b2;
     slot('sk-m2', rocketCd / S.rocketCd); slot('sk-q', stompCd / S.stompCd); slot('sk-e', decoyCd / DECOY_CD); slot('sk-r', 1 - ult / ULT_KILLS);
     $('wave').textContent = boss ? '보스전!' : endless ? `무한 모드 · 다음 보스 ${fmtTime(Math.max(0, nextBossAt - time))}` : `웨이브 ${Math.min(BOSSES_TO_CLEAR, bossKills + 1)}/${BOSSES_TO_CLEAR} · 보스까지 ${fmtTime(Math.max(0, nextBossAt - time))}`;
     if (boss) $('boss-fill').style.width = Math.max(0, boss.hp) / boss.maxHp * 100 + '%';
@@ -790,6 +907,8 @@ export function createGame(renderer, profile, onExit) {
       radar.strokeStyle = 'rgba(255,248,234,.35)'; radar.beginPath(); radar.arc(60, 60, RR / 2, 0, 7); radar.stroke();
       for (const q of zs) { const Z = ZT[q.type]; dot(q.x, q.z, Z.boss ? '#ffe066' : Z.bomb ? '#ff922b' : Z.heal ? '#7dffb0' : Z.spit ? '#d0a6ff' : Z.heavy ? '#ff6b6b' : q.elite ? '#ffd43b' : '#b6f09c', Z.boss ? 6 : Z.heavy || q.elite ? 3 : 2); }
       if (crateOn) dot(crate.position.x, crate.position.z, '#7df9ff', 6);
+      for (const m of potions) dot(m.position.x, m.position.z, '#ff8fa3', 5);
+      for (const g of b2Items) dot(g.position.x, g.position.z, '#7df9ff', 5);
       radar.fillStyle = '#fff'; radar.beginPath(); radar.moveTo(60, 53); radar.lineTo(65, 65); radar.lineTo(55, 65); radar.fill();
     }
   }
@@ -799,18 +918,19 @@ export function createGame(renderer, profile, onExit) {
     window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku);
     document.removeEventListener('mousemove', mm); document.removeEventListener('pointerlockchange', onLock);
     canvas.removeEventListener('pointerdown', md); window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', mu); window.removeEventListener('pointercancel', mu);
-    canvas.removeEventListener('contextmenu', noMenu);
+    canvas.removeEventListener('contextmenu', noMenu); canvas.removeEventListener('mousedown', mdn); window.removeEventListener('mouseup', mup);
     handlers.forEach(([id, fn]) => $(id).removeEventListener('click', fn));
     if (document.pointerLockElement === canvas) document.exitPointerLock();
+    if (!over && time - cBase.time > 1) commit(false, false); // 도중에 나가도 그때까지의 기록은 업적에 반영한다
     ALL.forEach(id => { $(id).hidden = true; });
     $('hurt').style.opacity = 0;
-    zMesh.forEach(m => { m.geometry.dispose(); m.dispose(); }); [bMesh, eMesh, gMesh, hMesh, pMesh, fMesh, tMesh, mMesh].forEach(m => { m.geometry.dispose(); m.material.dispose(); m.dispose(); });
+    zMesh.forEach(m => { m.geometry.dispose(); m.dispose(); }); [bMesh, eMesh, gMesh, hMesh, pMesh, fMesh, tMesh, mMesh, bombMesh].forEach(m => { m.geometry.dispose(); m.material.dispose(); m.dispose(); });
     world.dispose();
   }
   // 개발용: 화면을 그리지 않고 n프레임을 빠르게 진행한다 (자동 조준·연사, 스킬은 찰 때마다 사용). idle이면 아무것도 하지 않는다.
   function sim(n, idle) {
     autoAim = !idle; fireHeld = rocketHeld = !idle;
-    for (let i = 0; i < n && !over; i++) { if (paused) choose(0); else { if (!idle) want.q = want.e = want.r = true; step(1 / 60, time); } }
+    for (let i = 0; i < n && !over; i++) { if (paused) choose(0); else { if (!idle) want.q = want.e = want.r = want.b = true; step(1 / 60, time); } }
     autoAim = false; fireHeld = rocketHeld = false;
     return { level, levels, kills, hp: Math.round(P.hp), time: Math.round(time), bossKills, maxCombo, over };
   }
