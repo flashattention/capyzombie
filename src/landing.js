@@ -54,7 +54,7 @@ try {
   const turn = new T.Group(); scene.add(turn);
   const capy = buildCapy(); add(turn, capy, -1.5, 0, 0);
   let rider = null, stage = null, pop = 0;
-  const spots = [[0.9, 1.0, 0.25], [1.0, -1.35, -0.3], [2.25, -0.2, 0]];
+  const spots = [[0.9, 1.0, 0.25], [1.0, -1.35, -0.3], [2.35, -0.3, 0], [2.3, 1.35, 0.2]];
 
   refreshRider = () => {
     if (rider) capy.userData.seat.remove(rider);
@@ -64,15 +64,21 @@ try {
     if (stage) turn.remove(stage);
     stage = buildDiorama(state.map, 3.75);
     stage.userData.zeds = state.map.zombies.map((Z, i) => {
-      const z = buildZombie(Z); add(stage, z, spots[i][0], 0, spots[i][1]); z.rotation.y = Math.PI + spots[i][2]; return z;
+      const z = buildZombie(Z); add(stage, z, spots[i][0], 0, spots[i][1]); z.rotation.y = Math.PI + spots[i][2]; z.userData = { vy: 0, spin: 0 }; return z;
     });
     turn.add(stage);
   };
 
-  let px = null, drag = 0, size = [0, 0], visible = true;
-  wrap.addEventListener('pointerdown', e => { px = e.clientX; wrap.setPointerCapture(e.pointerId); });
-  wrap.addEventListener('pointermove', e => { if (px !== null) { drag += (e.clientX - px) * 0.01; px = e.clientX; } });
+  let px = null, drag = 0, size = [0, 0], visible = true, moved = 0, bonks = 0;
+  wrap.addEventListener('pointerdown', e => { px = e.clientX; moved = 0; wrap.setPointerCapture(e.pointerId); });
+  wrap.addEventListener('pointermove', e => { if (px !== null) { moved += Math.abs(e.clientX - px); drag += (e.clientX - px) * 0.01; px = e.clientX; } });
   ['pointerup', 'pointercancel'].forEach(n => wrap.addEventListener(n, () => { px = null; }));
+  // 끌지 않고 누르면 좀비들을 날려 보낸다
+  wrap.addEventListener('click', () => {
+    if (moved > 6 || !stage) return;
+    stage.userData.zeds.forEach((z, i) => { if (z.position.y < 0.1) { z.userData.vy = 5 + Math.random() * 3 + i * 0.4; z.userData.spin = (Math.random() - 0.5) * 16; bonks++; } });
+    const el = $('bonk'); el.hidden = false; el.textContent = `날려 버린 좀비 ${bonks}마리`;
+  });
   new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(wrap);
 
   const frame = ms => {
@@ -84,8 +90,12 @@ try {
     turn.rotation.y = drag + Math.sin(t * 0.35) * 0.75;
     animateCapy(capy, t, false, !reduce);
     if (rider) { pop = Math.max(0, pop - 0.05); const s = 1 + Math.sin(pop * Math.PI) * 0.25; rider.scale.set(s, s, s); }
-    if (stage) stage.userData.zeds.forEach((z, i) => { z.rotation.z = Math.sin(t * 2.2 + i * 2) * 0.08; z.position.y = Math.abs(Math.sin(t * 3 + i)) * 0.06; });
-    const d = 3.55 / (Math.tan(15 * Math.PI / 180) * Math.min(cam.aspect, 1.6));
+    if (stage) stage.userData.zeds.forEach((z, i) => {
+      const u = z.userData;
+      if (u.vy !== 0 || z.position.y > 0.07) { u.vy -= 0.3; z.position.y += u.vy * 0.016; z.rotation.x += u.spin * 0.016; if (z.position.y <= 0) { z.position.y = 0; u.vy = 0; z.rotation.x = 0; } }
+      else { z.rotation.z = Math.sin(t * 2.2 + i * 2) * 0.08; z.position.y = Math.abs(Math.sin(t * 3 + i)) * 0.06; }
+    });
+    const d = 3.45 / (Math.tan(15 * Math.PI / 180) * Math.min(cam.aspect, 1.6));
     cam.position.set(0, 0.9 + Math.sin(0.3) * d, Math.cos(0.3) * d); cam.lookAt(0, 0.9, 0);
     renderer.render(scene, cam);
   };

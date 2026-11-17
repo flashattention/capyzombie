@@ -4,22 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>카피좀비</title>
-  <meta name="description" content="카피바라 등에 올라탄 작은 친구가 게틀링건과 로켓으로 좀비 떼를 물리치는 3D 웹 게임.">
+  <meta name="description" content="카피바라 등에 올라탄 작은 친구가 1인칭으로 게틀링건과 로켓을 쏘며 좀비 떼를 물리치는 3D 웹 게임.">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 </head>
 <body>
   <div class="wrap">
     <header class="hero">
       <div class="hero-copy">
+        <p class="eyebrow">브라우저에서 바로 하는 1인칭 좀비 슈터</p>
         <h1>카피좀비</h1>
-        <p class="lead">세상 느긋한 카피바라 등에 올라타, 1인칭으로 게틀링건과 로켓을 쏘며 몰려드는 좀비 떼를 쓸어버리세요.</p>
+        <p class="lead">세상 느긋한 카피바라 등에 올라타, 게틀링건과 로켓으로 몰려드는 좀비 떼를 쓸어버리세요.</p>
         <div class="cta-row">
           <a class="cta" href="/play.html">지금 플레이</a>
-          <span class="cta-note">설치 없이 브라우저에서 바로 · 프로토타입 버전</span>
+          <span class="cta-note">설치 없음 · 무료 · 프로토타입 버전</span>
         </div>
+        <ul class="facts">
+          <li><b>4</b>전장</li>
+          <li><b>16</b>종 좀비와 보스</li>
+          <li><b>5</b>마리 라이더</li>
+          <li><b>15</b>가지 강화</li>
+        </ul>
       </div>
       <div class="stagecol">
-        <div class="stage" id="stage"><canvas id="hero" aria-label="카피바라와 좀비 3D 미리보기"></canvas><span class="hint">끌어서 돌리기</span></div>
+        <div class="stage" id="stage">
+          <canvas id="hero" aria-label="카피바라와 좀비 3D 미리보기"></canvas>
+          <span class="bonk" id="bonk" hidden></span>
+          <span class="hint">끌어서 돌리기 · 눌러서 좀비 날리기</span>
+        </div>
         <div class="pickers">
           <div class="views" id="pick-map" role="group" aria-label="전장 미리보기"></div>
           <div class="views" id="pick-rider" role="group" aria-label="라이더 미리보기"></div>
@@ -30,14 +41,34 @@
     <section class="block">
       <h2>이렇게 싸웁니다</h2>
       <div class="cols">
-        <div><h3>라이더의 눈으로 쏘기</h3><p>카피바라 등 위 1인칭 시점입니다. 마우스로 조준해 게틀링건을 쏘고, 우클릭 돌진으로 좀비 떼를 볼링핀처럼 날리고, 점프로 언덕 위에 오르세요.</p></div>
-        <div><h3>귤을 모아 강해지기</h3><p>쓰러진 좀비가 떨어뜨린 귤을 모으면 레벨이 오릅니다. 그때마다 게틀링건, 로켓, 카피바라 강화 셋 중 하나를 고르세요.</p></div>
-        <div><h3>내 친구, 내 이름</h3><p>라이더 동물을 고르고 모자와 목걸이로 꾸민 뒤 이름을 지어 주세요. 머리 위에 그 이름이 떠다닙니다.</p></div>
+        <div><h3>라이더의 눈으로 쏘기</h3><p>카피바라 등 위 1인칭 시점입니다. 조준선에 올린 좀비는 그대로 맞고, 우클릭 돌진으로 떼를 볼링핀처럼 날려 버립니다.</p></div>
+        <div><h3>1분마다 보스</h3><p>웨이브가 끝날 때마다 그 전장의 거대 좀비가 나타납니다. 셋을 잡으면 클리어, 다음 전장과 새 장비가 열립니다.</p></div>
+        <div><h3>귤을 모아 강해지기</h3><p>쓰러진 좀비가 떨어뜨린 귤을 모으면 레벨이 오릅니다. 그때마다 강화 카드 석 장 중 하나를 고르세요.</p></div>
+        <div><h3>끊기지 않는 연속 처치</h3><p>3초 안에 계속 쓰러뜨리면 연속 처치가 쌓이고, 25마리마다 체력을 채워 주는 붉은 귤이 떨어집니다.</p></div>
+        <div><h3>폭탄 좀비를 먼저</h3><p>등에 통을 멘 좀비는 죽으면 터집니다. 떼 한가운데서 터뜨리면 연쇄 폭발, 코앞에서 터지면 나도 다칩니다.</p></div>
+        <div><h3>내 친구, 내 이름</h3><p>라이더 동물을 고르고 모자와 목걸이로 꾸민 뒤 이름을 지어 주세요. V 키로 시점을 바꾸면 그 모습이 보입니다.</p></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2>조작</h2>
+      <div class="keys">
+        <div><span class="caps"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><b>이동</b></div>
+        <div><span class="caps"><kbd class="wide">마우스</kbd></span><b>조준</b></div>
+        <div><span class="caps"><kbd class="wide">좌클릭</kbd></span><b>게틀링건</b></div>
+        <div><span class="caps"><kbd class="wide">우클릭</kbd></span><b>돌진</b></div>
+        <div><span class="caps"><kbd>Q</kbd></span><b>로켓 포드</b></div>
+        <div><span class="caps"><kbd>E</kbd></span><b>발 구르기</b></div>
+        <div><span class="caps"><kbd>R</kbd></span><b>궁극기 귤 폭격</b></div>
+        <div><span class="caps"><kbd class="wide">Space</kbd></span><b>점프</b></div>
+        <div><span class="caps"><kbd>V</kbd></span><b>시점 전환</b></div>
+        <div><span class="caps"><kbd class="wide">Esc</kbd></span><b>일시정지</b></div>
       </div>
     </section>
 
     <section class="block">
       <h2>전장 네 곳, 좀비도 제각각</h2>
+      <p class="sub">카드를 누르면 위 미리보기가 그 전장으로 바뀝니다. 앞 전장을 클리어하면 다음 전장이 열립니다.</p>
       <div class="maps" id="maps"></div>
     </section>
 
@@ -48,15 +79,16 @@
         <dt>로켓 포드</dt><dd>Q. 조준한 곳으로 날아가 떼 한가운데를 터뜨립니다.</dd><dd class="state now">처음부터</dd>
         <dt>발 구르기</dt><dd>E. 카피바라가 껑충 뛰어 주변 좀비를 날려 버립니다.</dd><dd class="state now">처음부터</dd>
         <dt>귤 폭격</dt><dd>R 궁극기. 좀비 40마리를 처치하면 충전되어 조준한 일대를 초토화합니다.</dd><dd class="state now">처음부터</dd>
-        <dt>강화 수트</dt><dd>카피바라 온몸을 감싸는 기계 갑옷.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
-        <dt>제트팩</dt><dd>좀비 떼 위로 날아올라 자리를 옮깁니다.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
-        <dt>레이저</dt><dd>일직선으로 늘어선 좀비를 한 번에 꿰뚫습니다.</dd><dd class="state">후반 스테이지 · 개발 예정</dd>
+        <dt>레이저</dt><dd>사격 중 주기적으로 조준선 위의 좀비를 일렬로 꿰뚫습니다.</dd><dd class="state">전장 1곳 클리어 후</dd>
+        <dt>제트팩</dt><dd>공중에서 Space를 누르고 있으면 좀비 떼 위로 날아오릅니다.</dd><dd class="state">전장 2곳 클리어 후</dd>
+        <dt>강화 수트</dt><dd>카피바라가 기계 갑옷을 입어 덜 다치고 더 세게 들이받습니다.</dd><dd class="state">전장 3곳 클리어 후</dd>
       </dl>
     </section>
 
     <footer class="foot">
+      <h2>카피바라가 기다리고 있어요</h2>
       <a class="cta" href="/play.html">카피바라에 올라타기</a>
-      <span class="cta-note">이동 WASD · 사격 좌클릭 · 돌진 우클릭 · 무기 Q E · 궁극기 R · 점프 Space</span>
+      <span class="cta-note">키보드와 마우스 권장 · 최신 크롬, 엣지, 사파리, 파이어폭스</span>
     </footer>
   </div>
   <script type="module" src="/src/landing.js"></script>

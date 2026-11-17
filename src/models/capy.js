@@ -77,3 +77,30 @@ export function animateCapy(capy, t, moving, firing) {
   if (firing) u.spin.rotation.x = t * 22;
   u.seat.position.y = 0.6 * 1.04 + Math.abs(Math.sin(t * (moving ? 12 : 6))) * 0.03;
 }
+
+// 후반 장비의 겉모습을 카피바라에 붙인다
+export function addGear(capy, kind) {
+  const u = capy.userData, STEEL = 0x6f8fb0, TRIM = 0xf2c14e, GLOW = 0x7df9ff;
+  if (kind === 'laser') {
+    add(u.pod, box(0.3, 0.14, 0.2, 0x2f363c), 0.1, 0.24, 0);
+    add(u.pod, cyl(0.06, 0.3, GLOW, { axis: 'x', flat: 1 }), 0.3, 0.26, 0);
+    u.laserMuzzle = new T.Object3D(); add(u.pod, u.laserMuzzle, 0.46, 0.26, 0);
+  } else if (kind === 'jet') {
+    u.flames = [1, -1].map(s => {
+      add(u.body, cyl(0.16, 0.6, 0xa7b1b8, { axis: 'x' }), -0.78, 0.52, s * 0.3);
+      add(u.body, cyl(0.17, 0.08, TRIM, { axis: 'x' }), -0.6, 0.52, s * 0.3);
+      const f = add(u.body, cone(0.14, 0.6, 0xffa94d, { axis: 'x', flat: 1 }), -1.35, 0.52, s * 0.3); f.rotation.z = PI / 2; f.visible = false; return f;
+    });
+  } else if (kind === 'suit') {
+    add(u.head, ell(0.5, 0.2, 0.47, STEEL), -0.02, 0.27, 0);          // 정수리 판 (1인칭에서도 보인다)
+    add(u.head, box(0.36, 0.1, 0.5, STEEL), 0.44, 0.2, 0);             // 콧등 판
+    add(u.head, box(0.08, 0.04, 0.52, TRIM), 0.27, 0.27, 0);
+    [1, -1].forEach(s => {
+      add(u.head, box(0.16, 0.05, 0.03, GLOW, { flat: 1 }), 0.2, 0.19, s * 0.41); // 바이저 불빛
+      add(u.body, ell(0.42, 0.34, 0.2, STEEL), 0.62, 0.12, s * 0.5);  // 어깨 판
+      add(u.body, ell(0.42, 0.34, 0.2, STEEL), -0.72, 0.1, s * 0.48); // 엉덩이 판
+      add(u.body, box(0.5, 0.05, 0.05, TRIM), 0.62, 0.3, s * 0.66);
+    });
+    add(u.body, ell(0.5, 0.18, 0.4, STEEL), -0.7, 0.46, 0);
+  }
+}

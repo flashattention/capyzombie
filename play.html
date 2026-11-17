@@ -10,7 +10,7 @@
   <canvas id="c"></canvas>
 
   <section id="select" class="panel">
-    <h1>카피좀비</h1>
+    <div class="top"><h1>카피좀비</h1><a class="ghost linkbtn" href="/">메인으로</a></div>
     <p class="sub">같이 싸울 친구를 고르고 꾸며 주세요.</p>
 
     <label class="h" for="name">이름</label>
@@ -30,6 +30,14 @@
 
     <div class="h">전장</div>
     <div id="maps" class="chips"></div>
+    <p id="map-info" class="info"></p>
+
+    <div class="h">설정</div>
+    <div class="settings">
+      <label for="sens">마우스 감도 <output id="sens-val" for="sens">1.0</output></label>
+      <input id="sens" type="range" min="0.4" max="2.5" step="0.1" value="1">
+      <label class="check" for="sound"><input id="sound" type="checkbox" checked> 효과음</label>
+    </div>
 
     <button id="go" type="button" class="primary">출발!</button>
     <p class="hint">캐릭터를 끌면 돌려볼 수 있어요.</p>
@@ -42,15 +50,30 @@
       <div class="hp st"><div id="st-fill"></div></div>
     </div>
     <div class="hud-right">
-      <div><span class="k">처치</span> <b id="kills">0</b></div>
-      <div><span class="k">생존</span> <b id="time">0:00</b></div>
+      <div class="stats">
+        <div><span class="k">처치</span> <b id="kills">0</b></div>
+        <div><span class="k">생존</span> <b id="time">0:00</b></div>
+      </div>
+      <div id="map-name"></div>
     </div>
   </div>
+  <canvas id="radar" width="120" height="120" hidden></canvas>
   <div id="xp" hidden><div id="xp-fill"></div></div>
+  <div id="wave" hidden></div>
+  <div id="boss" hidden><span id="boss-name"></span><div class="bar"><div id="boss-fill"></div></div></div>
+  <div id="banner" hidden></div>
+  <div id="combo" hidden></div>
   <div id="hurt"></div>
   <div id="cross" hidden></div>
-  <div id="resume" hidden>화면을 클릭하면 조준을 시작합니다 <span>Esc로 마우스 풀기</span></div>
   <div id="tag" hidden></div>
+  <button id="pause-btn" type="button" class="ghost" hidden>일시정지</button>
+  <div id="skills" hidden>
+    <div class="skill" id="sk-q"><kbd>Q</kbd><span>로켓 포드</span></div>
+    <div class="skill" id="sk-e"><kbd>E</kbd><span>발 구르기</span></div>
+    <div class="skill ult" id="sk-r"><kbd>R</kbd><span>귤 폭격</span></div>
+  </div>
+  <div id="help" hidden>이동 WASD · 사격 좌클릭 · 돌진 우클릭 · 점프 Space · 시점 V · 일시정지 Esc</div>
+
   <div id="levelup" hidden>
     <div class="lv-box">
       <h1 id="lv-title">레벨 업!</h1>
@@ -58,19 +81,28 @@
       <div id="choices"></div>
     </div>
   </div>
-  <div id="skills" hidden>
-    <div class="skill" id="sk-q"><kbd>Q</kbd><span>로켓 포드</span></div>
-    <div class="skill" id="sk-e"><kbd>E</kbd><span>발 구르기</span></div>
-    <div class="skill ult" id="sk-r"><kbd>R</kbd><span>귤 폭격</span></div>
-  </div>
-  <div id="help" hidden>이동 WASD · 사격 좌클릭 · 돌진 우클릭 · 점프 Space · 시점 전환 V</div>
 
-  <div id="over" hidden>
+  <div id="pause" class="overlay" hidden>
     <div class="panel over-card">
-      <h1>좀비에게 따라잡혔어요</h1>
+      <h1>일시정지</h1>
+      <p>Esc를 누르면 언제든 멈출 수 있어요.</p>
+      <button id="resume-btn" type="button" class="primary">계속하기</button>
+      <button id="p-retry" type="button" class="ghost">처음부터 다시</button>
+      <button id="p-back" type="button" class="ghost">캐릭터 선택으로</button>
+      <a class="ghost linkbtn" href="/">메인으로 나가기</a>
+    </div>
+  </div>
+
+  <div id="over" class="overlay" hidden>
+    <div class="panel over-card">
+      <h1 id="over-title"></h1>
       <p id="over-stats"></p>
+      <p id="over-best"></p>
+      <button id="next" type="button" class="primary">다음 전장으로</button>
       <button id="retry" type="button" class="primary">다시 도전</button>
-      <button id="back" type="button" class="ghost">캐릭터 바꾸기</button>
+      <button id="endless" type="button" class="ghost">무한 모드로 계속</button>
+      <button id="back" type="button" class="ghost">캐릭터 선택으로</button>
+      <a class="ghost linkbtn" href="/">메인으로 나가기</a>
     </div>
   </div>
 

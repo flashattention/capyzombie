@@ -47,6 +47,10 @@ export function buildZombie(Z) {
   if (A === 'party') { const ph = add(h, cone(0.16, 0.36, 0xff8fab), -0.03, 0.46, 0); ph.rotation.z = 0.12; add(h, ell(0.05, 0.05, 0.05, 0xffffff), -0.07, 0.65, 0); }
   if (A === 'gum') add(h, ell(0.19, 0.19, 0.19, 0xff9ac2), 0.47, -0.14, 0);
   if (A === 'bunny') [1, -1].forEach(s => { const e = add(h, ell(0.06, 0.2, 0.04, 0xffb3c6), -0.02, 0.46, s * 0.13); e.rotation.x = s * 0.15; });
+  if (Z.bomb) { // 폭탄 좀비: 등에 붉은 통과 불붙은 심지
+    add(g, cyl(0.17, 0.42, 0xe03131), -0.27 * f, 0.6, 0); add(g, cyl(0.175, 0.06, 0xffd43b), -0.27 * f, 0.6, 0);
+    add(g, cyl(0.02, 0.16, 0x3b3030), -0.27 * f, 0.88, 0); add(g, ell(0.06, 0.06, 0.06, 0xffe45c, { flat: 1 }), -0.27 * f, 0.98, 0);
+  }
   g.scale.setScalar(Z.s || 1);
   return g;
 }

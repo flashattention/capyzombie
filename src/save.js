@@ -23,3 +23,28 @@ export function loadProfile() {
 export function saveProfile(p) {
   try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* 무시 */ }
 }
+
+// ── 진행도: 클리어한 전장, 전장별 최고 기록, 설정 ──
+const PKEY = 'capyzombie.progress';
+export function loadProgress() {
+  let p = null;
+  try { p = JSON.parse(localStorage.getItem(PKEY)); } catch (e) { /* 무시 */ }
+  p = p && typeof p === 'object' ? p : {};
+  p.cleared = Array.isArray(p.cleared) ? p.cleared : [];
+  p.best = p.best && typeof p.best === 'object' ? p.best : {};
+  p.settings = Object.assign({ sens: 1, sound: true }, p.settings);
+  return p;
+}
+export function saveProgress(p) {
+  try { localStorage.setItem(PKEY, JSON.stringify(p)); } catch (e) { /* 무시 */ }
+}
+// 기록을 갱신하고, 갱신됐는지 돌려준다
+export function recordRun(mapId, time, kills, cleared) {
+  const p = loadProgress(), b = p.best[mapId] || { time: 0, kills: 0 };
+  const better = time > b.time || kills > b.kills;
+  p.best[mapId] = { time: Math.max(b.time, Math.floor(time)), kills: Math.max(b.kills, kills) };
+  if (cleared && !p.cleared.includes(mapId)) p.cleared.push(mapId);
+  saveProgress(p);
+  return better;
+}
+export const fmtTime = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');

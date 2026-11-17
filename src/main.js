@@ -2,6 +2,8 @@ import * as T from 'three';
 import './style.css';
 import { createSelect } from './select.js';
 import { createGame } from './game.js';
+import { MAPS } from './maps.js';
+import { saveProfile, loadProfile } from './save.js';
 
 const canvas = document.getElementById('c');
 const renderer = new T.WebGLRenderer({ canvas, antialias: true });
@@ -10,11 +12,19 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = T.PCFSoftShadowMap;
 
 let mode = null, size = [0, 0], lastProfile = null;
-function swap(next) { if (mode) mode.dispose(); mode = next; size = [0, 0]; }
-function toSelect() { swap(createSelect(renderer, toGame)); }
+// 이전 화면을 먼저 정리한 뒤 새 화면을 만든다.
+// (새 화면을 먼저 만들면 이전 화면의 정리 코드가 새 화면의 UI까지 숨겨 버린다)
+function swap(make) { if (mode) mode.dispose(); mode = null; mode = make(); size = [0, 0]; }
+function toSelect() { swap(() => createSelect(renderer, toGame)); }
 function toGame(profile) {
   lastProfile = profile;
-  swap(createGame(renderer, profile, what => (what === 'retry' ? toGame(lastProfile) : toSelect())));
+  swap(() => createGame(renderer, profile, what => {
+    if (what === 'retry') toGame(lastProfile);
+    else if (what === 'next') {
+      const next = MAPS[MAPS.findIndex(m => m.id === lastProfile.map) + 1] || MAPS[0];
+      lastProfile = { ...lastProfile, map: next.id }; saveProfile(lastProfile); toGame(lastProfile);
+    } else toSelect();
+  }));
 }
 
 let last = performance.now();
@@ -22,29 +32,33 @@ function loop() {
   const now = performance.now();
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
   const w = window.innerWidth, h = window.innerHeight;
-  if (w !== size[0] || h !== size[1]) { size = [w, h]; renderer.setSize(w, h, false); mode.resize(w, h); }
-  mode.update(dt, now / 1000);
+  if (mode) {
+    if (w !== size[0] || h !== size[1]) { size = [w, h]; renderer.setSize(w, h, false); mode.resize(w, h); }
+    mode.update(dt, now / 1000);
+  }
   requestAnimationFrame(loop);
 }
+// 개발용: ?map=city 처럼 전장을 지정해 바로 확인한다 (?unlock과 함께 쓴다)
+const mapParam = new URLSearchParams(location.search).get('map');
+if (mapParam && MAPS.some(m => m.id === mapParam)) saveProfile({ ...loadProfile(), map: mapParam });
 toSelect();
 requestAnimationFrame(loop);
 
-// 개발 중 화면 확인용: #play는 선택창을 건너뛰고, #sim은 거기에 더해 질주·점프를 섞어 20초를 미리 돌린다
-if (location.hash === '#play' || location.hash === '#sim') document.getElementById('go').click();
-if (location.hash === '#sim') {
+// 개발 중 화면 확인용: #play는 선택창을 건너뛰고, #sim은 거기에 더해 자동 조준·연사로 미리 진행한다.
+// #sim 뒤에 초를 붙일 수 있다(#sim90). #retry는 재시작 뒤에도 UI가 남는지 확인한다.
+const hash = location.hash.slice(1);
+if (/^(play|sim|retry)/.test(hash)) document.getElementById('go').click();
+if (/^(sim|retry)/.test(hash)) {
   try {
     const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code }));
-    mode.resize(window.innerWidth, window.innerHeight);
-    mode.peek();
-    mode.sim(600);
-    key('keydown', 'KeyD'); key('keydown', 'ShiftLeft');
-    for (let i = 0; i < 6; i++) { key('keydown', 'Space'); mode.sim(100); }
-    key('keyup', 'KeyD'); key('keyup', 'ShiftLeft');
-    if (location.search === '?lv') { // 원을 그리며 귤을 주워 레벨업 흐름을 확인하고, 마지막에 선택창을 띄운다
+    const run = secs => {
+      mode.resize(window.innerWidth, window.innerHeight); mode.peek();
       const dirs = ['KeyD', 'KeyS', 'KeyA', 'KeyW'];
-      for (let i = 0; i < 40; i++) { key('keydown', dirs[i % 4]); mode.sim(90); key('keyup', dirs[i % 4]); }
-      mode.grant(999);
-    }
-    document.title = JSON.stringify(mode.sim(0));
-  } catch (e) { document.getElementById('help').textContent = 'SIM ERROR: ' + e.message; throw e; }
+      for (let i = 0; i < secs * 60 / 90; i++) { key('keydown', dirs[i % 4]); mode.sim(90); key('keyup', dirs[i % 4]); }
+      return mode.sim(0);
+    };
+    let res = run(+hash.replace(/\D/g, '') || 20);
+    if (hash.startsWith('retry')) { document.getElementById('p-retry').click(); res = run(5); }
+    document.title = JSON.stringify(res);
+  } catch (e) { document.getElementById('help').textContent = 'SIM ERROR: ' + e.message; document.title = 'SIM ERROR: ' + e.message; throw e; }
 }
