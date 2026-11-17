@@ -2,13 +2,25 @@
 // 저장소는 Upstash Redis(REST)를 쓴다. Vercel 프로젝트에 Upstash Redis(KV) 연동을 추가하면
 // KV_REST_API_URL / KV_REST_API_TOKEN 환경 변수가 자동으로 들어온다. 없으면 503을 돌려준다.
 const MAPS = ['farm', 'city', 'desert', 'candy', 'onsen', 'grave'];
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// 붙여 넣다 섞이기 쉬운 따옴표·공백·끝 슬래시를 정리하고, https://가 빠졌으면 붙인다
+const clean = v => String(v || '').trim().replace(/^["']|["']$/g, '').trim();
+let URL_ = clean(process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL).replace(/\/+$/, '');
+if (URL_ && !/^https?:\/\//i.test(URL_)) URL_ = 'https://' + URL_;
+const TOKEN = clean(process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN);
+// 원인을 구분하기 위한 오류. 비밀 값은 담지 않는다.
+class RedisError extends Error { constructor(kind, status) { super(kind); this.kind = kind; this.status = status; } }
 
 async function redis(commands) {
-  const r = await fetch(`${URL_}/pipeline`, { method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(commands) });
-  if (!r.ok) throw new Error('redis ' + r.status);
-  return (await r.json()).map(x => x.result);
+  if (/^rediss?:\/\//i.test(process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '')) throw new RedisError('url_is_not_rest'); // redis:// 주소가 아니라 REST 주소(https://)가 필요하다
+  let r;
+  try { r = await fetch(`${URL_}/pipeline`, { method: 'POST', headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(commands) }); }
+  catch (e) { throw new RedisError('cannot_reach_url'); }
+  if (r.status === 401 || r.status === 403) throw new RedisError('bad_token', r.status);
+  if (!r.ok) throw new RedisError('redis_http', r.status);
+  const out = await r.json();
+  if (!Array.isArray(out)) throw new RedisError('redis_reply');
+  const bad = out.find(x => x && x.error); if (bad) throw new RedisError('redis_command');
+  return out.map(x => x.result);
 }
 // 점수는 서버에서 계산한다: 처치 10점, 생존 1초 2점, 클리어 500점
 // 난이도 배율: src/difficulty.js의 score와 맞춘다
@@ -52,6 +64,6 @@ export default async function handler(req, res) {
     }
     return res.status(405).json({ error: 'method' });
   } catch (e) {
-    return res.status(500).json({ error: 'server' });
+    return res.status(500).json({ error: 'server', reason: e && e.kind ? e.kind : 'unknown', status: e && e.status ? e.status : undefined });
   }
 }
