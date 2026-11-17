@@ -59,6 +59,11 @@ export function buildZombie(Z) {
   if (A === 'witch') { add(h, cyl(0.54, 0.03, 0x2f2244), 0, 0.2, 0); const c = add(h, cone(0.26, 0.7, 0x2f2244), -0.04, 0.56, 0); c.rotation.z = 0.15; add(h, cyl(0.265, 0.06, 0xb6f09c), 0, 0.25, 0); }
   if (A === 'ears') [1, -1].forEach(s => { add(h, cone(0.12, 0.26, Z.earCol), -0.02, 0.36, s * 0.22); add(h, ell(0.18, 0.12, 0.2, Z.earCol), 0.26, -0.1, 0); });
   if (Z.spit) add(h, ell(0.05, 0.1, 0.16, 0x9dff7a, { flat: 1 }), 0.345, -0.18, 0); // 원거리 좀비: 초록 침이 고인 입
+  if (Z.shield) { add(g, box(0.08, 0.95, 0.8, 0xa7b1b8), 0.52, 0.62, 0); add(g, box(0.1, 0.2, 0.84, 0xf2c14e), 0.52, 0.62, 0); add(g, box(0.1, 0.99, 0.12, 0xf2c14e), 0.52, 0.62, 0); } // 방패
+  if (Z.heal) { const st = add(g, cyl(0.03, 1.5, 0x7a5a3c), 0.3, 0.8, 0.42 * f); st.rotation.z = -0.15; add(g, ell(0.14, 0.14, 0.14, 0x7dffb0, { flat: 1 }), 0.4, 1.6, 0.42 * f); add(h, cone(0.3, 0.4, 0x5ab06a), -0.05, 0.4, 0); } // 치유 지팡이
+  if (Z.split) { add(g, ell(0.2, 0.19, 0.2, Z.headCol || skin), -0.05, 0.95, 0.36 * f); const e = eye('zed', 0.06); add(g, e, 0.13, 0.97, 0.38 * f); e.rotation.y = PI / 2; add(g, box(0.02, 0.4, 0.03, 0x3b3030, { flat: 1 }), 0.26 * f, 0.56, 0); } // 어깨에 돋은 두 번째 머리
+  if (Z.charge) [1, -1].forEach(s => { const c = add(h, cone(0.07, 0.3, 0xf4f0d0), 0.12, 0.34, s * 0.2); c.rotation.z = -0.7; c.rotation.x = s * 0.3; }); // 뿔
+  if (Z.toxic) [[-0.25, 0.75, 0.1, 0.13], [-0.3, 0.5, -0.12, 0.1], [-0.16, 0.98, -0.05, 0.08], [0, 0.34, 0.3, 0.07]].forEach(q => add(g, ell(q[3], q[3], q[3], 0xc8ff5a, { flat: 1 }), q[0] * f, q[1], q[2] * f)); // 독 방울
   if (Z.bomb) { // 폭탄 좀비: 등에 붉은 통과 불붙은 심지
     add(g, cyl(0.17, 0.42, 0xe03131), -0.27 * f, 0.6, 0); add(g, cyl(0.175, 0.06, 0xffd43b), -0.27 * f, 0.6, 0);
     add(g, cyl(0.02, 0.16, 0x3b3030), -0.27 * f, 0.88, 0); add(g, ell(0.06, 0.06, 0.06, 0xffe45c, { flat: 1 }), -0.27 * f, 0.98, 0);

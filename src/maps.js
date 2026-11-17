@@ -12,7 +12,34 @@ const ROLE = {
   spitter: { role: '원거리', s: 1, hp: 5, speed: 1.7, radius: 0.42, dps: 6, xp: 2, spit: true },
   leaper: { role: '도약', s: 0.85, hp: 5, speed: 2.3, radius: 0.36, dps: 12, xp: 2, leap: true },
 };
+Object.assign(ROLE, {
+  shield: { role: '방패', s: 1.1, hp: 8, speed: 1.6, radius: 0.45, dps: 11, xp: 3, shield: true },
+  healer: { role: '치유', s: 1, hp: 6, speed: 1.6, radius: 0.42, dps: 6, xp: 4, heal: true },
+  splitter: { role: '분열', s: 1.25, fat: 1.2, hp: 12, speed: 1.5, radius: 0.55, dps: 12, xp: 3, split: true },
+  charger: { role: '돌격', s: 1.1, hp: 8, speed: 1.8, radius: 0.48, dps: 16, xp: 3, charge: true },
+  mini: { role: '떼', s: 0.5, hp: 1.5, speed: 3.8, radius: 0.24, dps: 5, xp: 0.5, mini: true },
+  toxic: { role: '맹독', s: 1, hp: 6, speed: 1.8, radius: 0.42, dps: 9, xp: 3, toxic: true },
+});
 const z = (name, role, look) => ({ name, ...ROLE[role], ...look });
+// 전장의 기본 좀비 모습에 역할 장식을 얹어 만드는 6종. 손으로 만든 6종과 합쳐 전장마다 12종이 된다.
+const EXTRA = [
+  ['방패병', 'shield', { shirt: 0x8a949c }], ['주술사', 'healer', { shirt: 0xf1f3f5, pants: 0x5ab06a }], ['분열체', 'splitter', {}],
+  ['돌격병', 'charger', { shirt: 0x9c2b2b }], ['떼거리', 'mini', {}], ['맹독 좀비', 'toxic', { skin: 0x9adf5a, shirt: 0x6a3fa0 }],
+];
+// 순서 고정: 0 기본, 1 러너, 2 탱커, 3 폭탄, 4 원거리, 5 도약, 6 방패, 7 치유, 8 분열, 9 돌격, 10 떼, 11 맹독
+export function mapMobs(map) {
+  if (!map._mobs) {
+    const b = map.zombies[0];
+    map._mobs = [...map.zombies, ...EXTRA.map(([n, role, look]) => z(`${map.tag} ${n}`, role, { skin: b.skin, shirt: b.shirt, pants: b.pants, acc: b.acc, capCol: b.capCol, ...look }))];
+  }
+  return map._mobs;
+}
+// 보스 3종: 1웨이브 근접형, 2웨이브 원거리형(거리를 두고 쏜다), 3웨이브 복합형
+const bosses = (n1, a1, n2, n3) => [
+  { name: n1, base: 2, scale: 2.6, abilities: a1 },
+  { name: n2, base: 4, scale: 2.5, ranged: true, abilities: ['snipe', 'mortar', 'spiral'] },
+  { name: n3, base: 5, scale: 3.1, abilities: ['spiral', 'slam', 'summon', 'mortar', 'volley'] },
+];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const F = { flat: 1 };
@@ -56,7 +83,7 @@ export const MAPS = [
     air: { colors: [0xffffff, 0xffc9d9, 0xc9e88a], n: 140, fall: 0.8, drift: 0.9, size: 0.07 },
     hill: { side: [0x7a5a3c, 0x8a6a45], top: 0x7fb04e }, pad: [0xe2b64f, 0xc95f4a], wall: 0x9a7447, far: { kind: 'cone', colors: [0x6fa64a, 0x5f9e3f, 0x86b85a], h: [10, 28], w: [18, 40] },
     props: [[0.38, tuft(0x5f9e3f)], [0.08, hay], [0.2, tree], [0.1, rock(0x9a8f80)], [0.09, flower(0xffe066)], [0.09, flower(0xff8fab)], [0.03, scarecrow], [0.03, flower(0xffffff)]],
-    boss: { name: '호박 대왕', ability: 'summon' },
+    tag: '농장', bosses: bosses('호박 대왕', ['summon', 'volley'], '허수아비 포수', '메뚜기 여왕'),
     zombies: [
       z('농부 좀비', 'basic', { skin: 0x8fb86a, shirt: 0xc95f4a, pants: 0x4f6a8f, acc: 'straw' }),
       z('꼬마 좀비', 'runner', { skin: 0xa9cf7a, shirt: 0xf2c14e, pants: 0x7a5a3c, brain: 1 }),
@@ -105,7 +132,7 @@ export const MAPS = [
     air: { colors: [0xff8fd0, 0x7df9ff, 0xffe066], n: 110, fall: -0.25, drift: 0.3, size: 0.06, glow: true },
     hill: { side: [0xd9523a, 0x3b5bdb, 0xff922b, 0x20c997], top: 0x2f3348 }, pad: [0x495057, 0x7df9ff], wall: 0x2e3048, far: { kind: 'box', colors: [0x4a4770, 0x5a5488, 0x3d3a66], h: [22, 75], w: [10, 22] },
     props: [[0.2, trafficCone], [0.14, lamp], [0.12, mailbox], [0.14, hydrant], [0.16, trash], [0.1, rock(0x777b93)], [0.08, bench], [0.06, vending]],
-    boss: { name: '현장 소장', ability: 'slam' },
+    tag: '도심', bosses: bosses('현장 소장', ['slam', 'mortar'], '바리스타 저격수', '파쿠르 두목'),
     zombies: [
       z('회사원 좀비', 'basic', { skin: 0x7ee081, shirt: 0xf1f3f5, pants: 0x364fc7, acc: 'tie', brain: 1 }),
       z('배달 러너', 'runner', { skin: 0x9af09c, shirt: 0x20c997, pants: 0x343a40, acc: 'cap', capCol: 0xff4d4d }),
@@ -168,7 +195,7 @@ export const MAPS = [
     air: { colors: [0xf2dca0, 0xe3c27a], n: 150, fall: 0.15, drift: 3.2, size: 0.05 },
     hill: { side: [0xc98a4b, 0xb8904f], top: 0xdba15e }, pad: [0xb8904f, 0x4fc3d9], wall: 0xc9ae76, far: { kind: 'cone', colors: [0xdfb96e, 0xd1a55c, 0xc98a4b], h: [8, 22], w: [24, 55] },
     props: [[0.3, rock(0xb8904f)], [0.2, cactus], [0.14, pillar], [0.18, tuft(0xb9a25a)], [0.1, bones], [0.08, pot]],
-    boss: { name: '선인장 군주', ability: 'volley' },
+    tag: '사막', bosses: bosses('선인장 군주', ['volley', 'snipe'], '코브라 파라오', '전갈 왕'),
     zombies: [
       z('미라 좀비', 'basic', { skin: 0xd9cfb0, shirt: 0xd9cfb0, pants: 0xc4b998, acc: 'bandage' }),
       z('카우보이 좀비', 'runner', { skin: 0x86b86b, shirt: 0x9c4f2e, pants: 0x3d5a80, acc: 'cowboy' }),
@@ -215,7 +242,7 @@ export const MAPS = [
     air: { colors: [0xff8fab, 0xffe066, 0x8ecae6, 0x9be3c9, 0xc9b6f2], n: 170, fall: 1.0, drift: 0.6, size: 0.08 },
     hill: { side: [0xf7b2c4, 0xc98a6b, 0x9be3c9, 0xffe066], top: 0xfff1d6 }, pad: [0x9be3c9, 0xff8fab], wall: 0xffffff, far: { kind: 'cone', colors: [0xffc9d9, 0xc9b6f2, 0x9be3c9, 0xffe9a8], h: [12, 34], w: [14, 34] },
     props: [[0.18, gumdrop(0xc9b6f2)], [0.14, gumdrop(0x9be3c9)], [0.14, gumdrop(0xffe066)], [0.14, lollipop(0xff8fab)], [0.14, lollipop(0x8ecae6)], [0.14, cupcake], [0.12, donut]],
-    boss: { name: '풍선껌 여왕', ability: 'bombs' },
+    tag: '캔디', bosses: bosses('풍선껌 여왕', ['bombs', 'spiral'], '솜사탕 마법사', '젤리 대마왕'),
     zombies: [
       z('파티모자 좀비', 'basic', { skin: 0xa8e6cf, shirt: 0xffe066, pants: 0x8ecae6, acc: 'party' }),
       z('토끼 머리띠', 'runner', { skin: 0xb8f0dc, shirt: 0xffffff, pants: 0xffb3c6, acc: 'bunny' }),
@@ -277,7 +304,7 @@ export const MAPS = [
     air: { colors: [0xffffff], n: 220, fall: 1.6, drift: 0.8, size: 0.07 },
     hill: { side: [0x8a949c, 0x7a8a94], top: 0xffffff }, pad: [0x6b4a2f, 0xd9523a], wall: 0x6b4a2f, far: { kind: 'cone', colors: [0xffffff, 0xc7d6e4, 0xa9bccf], h: [26, 62], w: [26, 52] },
     props: [[0.34, pine], [0.2, rock(0xaab4bc)], [0.1, snowman], [0.12, stoneLantern], [0.1, bucket], [0.14, tuft(0xcfe0c9)]],
-    boss: { name: '눈사람 장군', ability: 'volley' },
+    tag: '온천', bosses: bosses('눈사람 장군', ['volley', 'slam'], '감기 대장', '눈원숭이 왕'),
     zombies: [
       z('목욕 좀비', 'basic', { skin: 0xa8d8c0, shirt: 0xfff1d6, pants: 0xfff1d6, acc: 'towel' }),
       z('스키 러너', 'runner', { skin: 0xb8e8d0, shirt: 0xe03131, pants: 0x3b5bdb, acc: 'beanie', capCol: 0xffd43b }),
@@ -320,7 +347,7 @@ export const MAPS = [
     air: { colors: [0xd6ff8a, 0xfff3a0], n: 120, fall: -0.15, drift: 0.5, size: 0.07, glow: true },
     hill: { side: [0x4a4a5a, 0x3f4352], top: 0x566a58 }, pad: [0x3a3a4a, 0xb6f09c], wall: 0x30323e, far: { kind: 'cone', colors: [0x2a2f55, 0x343a66, 0x23284a], h: [14, 40], w: [16, 40] },
     props: [[0.26, tomb], [0.12, cross], [0.16, deadTree], [0.12, jackLantern], [0.1, graveLamp], [0.14, tuft(0x3f5a45)], [0.1, bones]],
-    boss: { name: '프랑켄 박사', ability: 'slam' },
+    tag: '묘지', bosses: bosses('프랑켄 박사', ['slam', 'summon', 'mortar'], '대마녀', '늑대인간 군주'),
     zombies: [
       z('해골 좀비', 'basic', { skin: 0xf0ecdc, shirt: 0xe4dfcc, pants: 0xd6d0bc, noHands: 1 }),
       z('박쥐 좀비', 'runner', { skin: 0x9a7fc9, shirt: 0x4a3a66, pants: 0x3a2f55, acc: 'wings' }),

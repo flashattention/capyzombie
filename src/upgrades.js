@@ -6,6 +6,8 @@ export const BASE_STATS = () => ({
   speed: 1, maxHp: 100, magnet: 7, stReg: 0.22, ramDmg: 6,
   laser: 0, jet: 0, armor: 0,
   orbit: 0, drone: 0, chain: 0, fire: 0, frost: 0, leech: 0, crit: 0, critMul: 2.5, jump: 1, stompCd: 7, xpMul: 1,
+  ricochet: 0, explosive: 0, explosiveR: 1, thorns: 0, ultRate: 1, stompR: 1, stompDmg: 1, decoyUp: 0,
+  homing: 0, freeze: 0, sun: 0, droneN: 1, chainAlways: 0, rushCost: 1, rushWave: 0, regen: 0, laserCdMul: 1, laserW: 1,
 });
 
 export const UPGRADES = [
@@ -28,15 +30,44 @@ export const UPGRADES = [
   { id: 'frost', group: '로켓 포드', name: '냉동 탄두', desc: '폭발에 휩쓸린 좀비가 얼어 느려집니다.', max: 3, apply: S => { S.frost += 1; } },
   { id: 'crit', group: '게틀링건', name: '급소 사격', desc: '치명타 확률이 12% 늘어납니다. 치명타는 2.5배 피해입니다.', max: 4, apply: S => { S.crit += 0.12; } },
   { id: 'leech', group: '카피바라', name: '귤즙 흡수', desc: '좀비를 처치할 때 가끔 체력을 2 회복합니다.', max: 3, apply: S => { S.leech += 1; } },
+  { id: 'ricochet', group: '게틀링건', name: '도탄', desc: '탄이 맞은 뒤 근처의 다른 좀비에게 한 번 더 튑니다.', max: 3, apply: S => { S.ricochet += 1; } },
+  { id: 'explosive', group: '게틀링건', name: '폭발탄', desc: '탄이 맞을 때 12% 확률로 작은 폭발을 일으킵니다. 방패도 뚫습니다.', max: 3, apply: S => { S.explosive += 1; } },
+  { id: 'thorns', group: '카피바라', name: '가시 갑옷', desc: '몸에 닿은 좀비가 계속 피해를 입습니다.', max: 3, apply: S => { S.thorns += 1; } },
+  { id: 'ultcharge', group: '카피바라', name: '귤 저장고', desc: '궁극기가 34% 더 빨리 충전됩니다.', max: 3, apply: S => { S.ultRate += 0.34; } },
+  { id: 'stompUp', group: '카피바라', name: '지진 발굽', desc: '발 구르기의 반경이 20%, 피해가 60% 늘어납니다.', max: 3, apply: S => { S.stompR += 0.2; S.stompDmg += 0.6; } },
+  { id: 'decoyUp', group: '카피바라', name: '왕귤 미끼', desc: '미끼 귤이 더 오래 버티고 더 크게 터집니다.', max: 3, apply: S => { S.decoyUp += 1; } },
   // 후반 장비: 클리어한 전장 수(ctx.cleared)에 따라 카드에 등장한다
   { id: 'laser', group: '후반 장비', gear: 'laser', name: '레이저', desc: '사격 중 주기적으로 조준선 위의 좀비를 일렬로 꿰뚫습니다. 올릴수록 자주, 세게 쏩니다.', max: 3, available: c => c.cleared >= 1, apply: S => { S.laser += 1; } },
   { id: 'jet', group: '후반 장비', gear: 'jet', name: '제트팩', desc: '공중에서 Space를 누르고 있으면 스태미나로 날아오릅니다.', max: 1, available: c => c.cleared >= 2, apply: S => { S.jet = 1; } },
   { id: 'suit', group: '후반 장비', gear: 'suit', name: '강화 수트', desc: '기계 갑옷을 입어 받는 피해가 30% 줄고 들이받기 피해가 12 늘어납니다.', max: 1, available: c => c.cleared >= 3, apply: S => { S.armor = 0.3; S.ramDmg += 12; } },
 ];
 
+// 합성: 재료 두 가지가 필요한 레벨에 닿으면 합성 카드가 나온다. 재료는 그대로 남고 합성 효과가 더해진다.
+export const FUSIONS = [
+  { id: 'f_storm', name: '폭풍 게틀링', need: { rate: 3, crit: 2 }, desc: '발사 간격이 40% 더 줄고 탄이 1마리 더 꿰뚫습니다.', apply: S => { S.fireCd *= 0.6; S.pierce += 1; } },
+  { id: 'f_shotgun', name: '산탄 포격', need: { multi: 2, pierce: 2 }, desc: '한 번에 쏘는 탄이 2발 늘고, 탄이 좀비를 끝없이 꿰뚫습니다.', apply: S => { S.shots += 2; S.pierce += 99; } },
+  { id: 'f_cluster', name: '집속탄', need: { explosive: 2, ricochet: 2 }, desc: '폭발탄 확률이 두 배가 되고 폭발이 60% 커집니다.', apply: S => { S.explosive *= 2; S.explosiveR = 1.6; } },
+  { id: 'f_missile', name: '미사일 폭풍', need: { reload: 3, salvo: 2 }, desc: '로켓이 좀비를 쫓아가고, 한 번에 2발 더 나갑니다.', apply: S => { S.homing = 1; S.rockets += 2; } },
+  { id: 'f_glacier', name: '빙하 탄두', need: { radius: 2, frost: 2 }, desc: '폭발에 휩쓸린 좀비가 완전히 얼어붙고, 폭발 반경이 30% 넓어집니다.', apply: S => { S.freeze = 1; S.rocketR *= 1.3; } },
+  { id: 'f_sun', name: '태양 귤', need: { orbit: 3, fire: 2 }, desc: '맴도는 귤이 불타는 태양이 됩니다. 더 넓게 돌고 피해가 3배입니다.', apply: S => { S.sun = 1; } },
+  { id: 'f_squad', name: '번개 편대', need: { drone: 3, chain: 2 }, desc: '드론이 3발씩 쏘고, 드론의 탄은 항상 번개를 옮깁니다.', apply: S => { S.droneN = 3; S.chainAlways = 1; } },
+  { id: 'f_tank', name: '카피바라 전차', need: { speed: 3, ram: 2 }, desc: '돌진 스태미나 소모가 절반이 되고, 들이받기 피해가 3배, 달리는 동안 충격파가 퍼집니다.', apply: S => { S.ramDmg *= 3; S.rushCost = 0.5; S.rushWave = 1; } },
+  { id: 'f_immortal', name: '불사의 가죽', need: { hp: 3, leech: 2 }, desc: '최대 체력이 50 늘고 초당 2씩 저절로 회복합니다.', apply: (S, P) => { S.maxHp += 50; S.regen = 2; P.hp = Math.min(S.maxHp, P.hp + 50); } },
+  { id: 'f_feast', name: '귤 회오리', need: { magnet: 2, stamina: 2 }, desc: '전장의 모든 귤이 날아오고 경험치를 25% 더 얻습니다.', apply: S => { S.magnet = 999; S.xpMul *= 1.25; } },
+  { id: 'f_quake', name: '지진 가시', need: { stompUp: 2, thorns: 2 }, desc: '발 구르기 대기 시간이 절반이 되고 가시 피해가 2배가 됩니다.', apply: S => { S.stompCd *= 0.5; S.thorns *= 2; } },
+  { id: 'f_sunbeam', name: '태양 광선', need: { laser: 2, dmg: 3 }, desc: '레이저 대기 시간이 절반이 되고 굵기가 2배가 됩니다.', apply: S => { S.laserCdMul = 0.5; S.laserW = 2; } },
+];
+export const nameOf = id => (UPGRADES.find(u => u.id === id) || FUSIONS.find(f => f.id === id) || { name: id }).name;
+export const recipesWith = id => FUSIONS.filter(f => id in f.need);
+export const recipeText = f => Object.entries(f.need).map(([k, v]) => `${nameOf(k)} ${v}`).join(' + ');
+
+// 카드 3장을 뽑는다. 합성할 수 있는 것이 있으면 첫 장은 반드시 합성 카드다.
 export function rollChoices(levels, ctx = { cleared: 0 }, n = 3) {
   const pool = UPGRADES.filter(u => (levels[u.id] || 0) < u.max && (!u.available || u.available(ctx)));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  return pool.slice(0, n);
+  const out = pool.slice(0, n);
+  const fus = FUSIONS.filter(f => !levels[f.id] && Object.entries(f.need).every(([k, v]) => (levels[k] || 0) >= v));
+  if (fus.length) out[0] = { ...fus[0], group: '합성', max: 1, fusion: true };
+  return out;
 }
-export const xpForLevel = level => 8 + level * 8;
+export const xpForLevel = level => Math.round(10 + level * 9 + level * level * 0.5);
