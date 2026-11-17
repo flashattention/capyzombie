@@ -64,7 +64,7 @@ export function buildCapy() {
   const rk = rocketPod(); add(body, rk, 0.1, 0.12, -(p.bw + 0.2));
   const seat = new T.Group(); add(body, seat, -0.08, p.bh * 1.04, 0);
 
-  g.userData = { body, by, head: h, ears, seat, spin: gat.userData.spin, gunMuzzle: gat.userData.muzzle, rocketMuzzle: rk.userData.muzzle };
+  g.userData = { body, by, head: h, ears, seat, gun: gat, pod: rk, spin: gat.userData.spin, gunMuzzle: gat.userData.muzzle, rocketMuzzle: rk.userData.muzzle };
   return g;
 }
 

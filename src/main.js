@@ -35,6 +35,7 @@ if (location.hash === '#sim') {
   try {
     const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code }));
     mode.resize(window.innerWidth, window.innerHeight);
+    mode.peek();
     mode.sim(600);
     key('keydown', 'KeyD'); key('keydown', 'ShiftLeft');
     for (let i = 0; i < 6; i++) { key('keydown', 'Space'); mode.sim(100); }
