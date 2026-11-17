@@ -151,3 +151,19 @@ input#name:invalid,input#name.bad{border-color:var(--red)}
 .build li{background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:1px 10px;white-space:nowrap}
 .build li.fz{background:#ffd8a8;border-color:#d9480f}
 .build li.rc{border-style:dashed;color:var(--muted);white-space:normal;border-radius:12px}
+
+/* ── 화면 위 가운데의 큰 체력 막대 (왼쪽에 레벨) ── */
+#vitals{position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;align-items:center;gap:10px}
+#vitals #lv{font:400 26px var(--display);color:#fff;background:var(--green);border:3px solid var(--ink);border-radius:14px;padding:3px 14px;white-space:nowrap;text-shadow:none;box-shadow:0 3px 0 var(--ink)}
+#vitals .bars{display:flex;flex-direction:column;gap:4px}
+#vitals .hp{position:relative;width:min(460px,48vw);max-width:none;height:30px;margin:0;border-width:3px;box-shadow:0 3px 0 var(--ink)}
+#vitals .hp.st{height:11px;width:100%;box-shadow:none}
+#hp-num{position:absolute;inset:0;display:grid;place-items:center;font:400 18px var(--display);color:#fff;text-shadow:0 2px 0 var(--ink),0 0 4px var(--ink);font-variant-numeric:tabular-nums}
+#vitals.low .hp:first-child{animation:lowhp .5s ease-in-out infinite alternate}
+@keyframes lowhp{from{box-shadow:0 3px 0 var(--ink),0 0 0 0 rgba(217,82,58,.0)}to{box-shadow:0 3px 0 var(--ink),0 0 0 7px rgba(217,82,58,.55)}}
+#wave{top:74px}
+#boss{top:104px}
+#pause-btn{top:150px}
+#help{left:20px;top:auto;bottom:20px;transform:none;font-size:12px;opacity:.85}
+@media (max-width:760px){ #hud-name{display:none} #vitals #lv{font-size:20px;padding:2px 10px} #help{display:none} }
+@media (prefers-reduced-motion: reduce){ #vitals.low .hp:first-child{animation:none;outline:4px solid rgba(217,82,58,.6)} }

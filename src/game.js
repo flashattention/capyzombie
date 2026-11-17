@@ -763,6 +763,8 @@ export function createGame(renderer, profile, onExit) {
     lastHp = P.hp; hurt = Math.max(0, hurt - dt * 1.5); $('hurt').style.opacity = hurt;
     hitMark = Math.max(0, hitMark - dt); $('cross').classList.toggle('hit', hitMark > 0);
     $('hp-fill').style.width = Math.max(0, P.hp) / S.maxHp * 100 + '%';
+    $('hp-num').textContent = Math.max(0, Math.ceil(P.hp)) + ' / ' + S.maxHp;
+    $('vitals').classList.toggle('low', P.hp < S.maxHp * 0.3);
     $('xp-fill').style.width = Math.min(1, xp / xpForLevel(level)) * 100 + '%';
     $('lv').textContent = 'Lv ' + level;
     $('st-fill').style.width = P.stamina * 100 + '%';

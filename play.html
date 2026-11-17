@@ -49,9 +49,14 @@
 
   <div id="hud" hidden>
     <div class="hud-left">
-      <div class="who"><span id="hud-name"></span><span id="lv">Lv 1</span></div>
-      <div class="hp"><div id="hp-fill"></div></div>
-      <div class="hp st"><div id="st-fill"></div></div>
+      <div class="who"><span id="hud-name"></span></div>
+    </div>
+    <div id="vitals">
+      <span id="lv">Lv 1</span>
+      <div class="bars">
+        <div class="hp" role="img" aria-label="체력"><div id="hp-fill"></div><span id="hp-num"></span></div>
+        <div class="hp st" role="img" aria-label="스태미나"><div id="st-fill"></div></div>
+      </div>
     </div>
     <div class="hud-right">
       <div class="stats">
