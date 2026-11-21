@@ -30,6 +30,11 @@
         </provider>
     </application>
 
+    <!-- 화면은 가로로 고정하지만, 가로 화면 기능을 따로 신고하지 않은 기기(PC, 일부 태블릿 등)도 설치할 수 있게 선택사항으로 둔다 -->
+    <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
