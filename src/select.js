@@ -155,7 +155,7 @@ export function createSelect(renderer, onStart) {
     W = w; H = h; cam.aspect = w / h;
     // 패널이 가리는 만큼 시야를 밀어 캐릭터를 남은 영역 가운데에 둔다
     const r = root.getBoundingClientRect();
-    if (w > 760) cam.setViewOffset(w, h, (w - r.left) / 2, -h * 0.09, w, h); // 위쪽 로고 자리만큼 캐릭터를 조금 내린다
+    if (w > 760) cam.setViewOffset(w, h, (w - r.left) / 2, -h * (h <= 500 ? 0.14 : 0.09), w, h); // 위쪽 로고 자리만큼 캐릭터를 조금 내린다
     else cam.setViewOffset(w, h, 0, (h - r.top) / 2, w, h);
     cam.updateProjectionMatrix();
   }

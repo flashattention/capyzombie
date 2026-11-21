@@ -318,3 +318,27 @@ html:lang(ja) #logo,html:lang(zh-CN) #logo{font-weight:900}
 /* 넓은 화면은 왼쪽 위에 랭킹 보드가 있으니, 랭킹 보드와 오른쪽 패널 사이 가운데에 */
 @media (min-width:981px){ #logo{left:380px;width:calc(100% - 380px - 440px);font-size:clamp(44px,5vw,96px)} }
 @media (min-width:981px) and (max-width:1180px){ #logo{left:320px;width:calc(100% - 320px - 440px)} }
+
+/* 패널 제목을 뺐으니 "메인으로"는 오른쪽에 붙이고, 앱에서는 버튼이 숨겨져 빈 줄이 남지 않게 한다 */
+.select-top{justify-content:flex-end}
+body.app .select-top{display:none}
+/* 로고 위치: 화면 위 끝과 캐릭터 머리 사이의 가운데 (캐릭터 머리가 화면 높이의 약 34%에 있어서 로고 중심을 17%에 둔다) */
+#logo{top:17vh;transform:translateY(-50%) rotate(-3deg);animation-name:logo-in2}
+@keyframes logo-in2{from{opacity:0;transform:translateY(-50%) rotate(-3deg) scale(.6)}to{opacity:1;transform:translateY(-50%) rotate(-3deg) scale(1)}}
+@media (max-height:500px){ #logo{top:17vh} }
+@media (min-width:981px){ #logo{top:17vh} }
+@media (max-width:760px){ #logo{top:9vh} }
+/* 로고 크게 (휴대폰 가로 화면은 왼쪽 절반 폭에 거의 꽉 차게) */
+#logo{font-size:clamp(56px,9vw,128px)}
+@media (max-height:500px){ #logo{font-size:clamp(46px,8.6vw,90px);text-shadow:4px 0 var(--ink),-4px 0 var(--ink),0 4px var(--ink),0 -4px var(--ink),3px 3px var(--ink),-3px 3px var(--ink),3px -3px var(--ink),-3px -3px var(--ink),0 9px 0 var(--ink)} }
+@media (min-width:981px){ #logo{font-size:clamp(60px,6.6vw,124px)} }
+@media (max-width:760px){ #logo{font-size:clamp(46px,14vw,84px)} }
+/* 로고 크기는 처음의 약 1.3배, 위치는 눈으로 볼 때 화면 위 끝과 캐릭터 머리 사이 가운데가 되도록 조금 더 아래로 */
+@media (max-height:500px){ #logo{top:22vh;font-size:clamp(40px,7.8vw,78px)} }
+@media (max-height:500px){ #logo{top:19.5vh} }
+@media (max-height:500px){ #logo{top:24vh} }
+/* "카피좀비"는 네 글자라 짧고 Jua의 한글이 작게 그려져서, 다른 언어와 비슷한 크기로 보이게 한국어만 키운다 */
+html:lang(ko) #logo{font-size:clamp(70px,11vw,156px)}
+@media (max-height:500px){ html:lang(ko) #logo{font-size:clamp(50px,9.8vw,98px)} }
+@media (min-width:981px){ html:lang(ko) #logo{font-size:clamp(74px,8vw,150px)} }
+@media (max-width:760px){ html:lang(ko) #logo{font-size:clamp(56px,17vw,100px)} }
