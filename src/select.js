@@ -79,7 +79,7 @@ export function createSelect(renderer, onStart) {
   }
 
   // ── UI ──
-  const root = $('select'); root.hidden = false; $('rankboard').hidden = false;
+  const root = $('select'); root.hidden = false; $('rankboard').hidden = false; $('logo').hidden = false;
   const nameEl = $('name'), msgEl = $('nick-msg'), goEl = $('go'); nameEl.value = account.nick;
   $('rank-id').textContent = t('랭킹 ID: {id}', { id: account.id }); // 기록 삭제를 요청할 때 쓴다
   const NICK_HELP = t('닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.');
@@ -155,7 +155,7 @@ export function createSelect(renderer, onStart) {
     W = w; H = h; cam.aspect = w / h;
     // 패널이 가리는 만큼 시야를 밀어 캐릭터를 남은 영역 가운데에 둔다
     const r = root.getBoundingClientRect();
-    if (w > 760) cam.setViewOffset(w, h, (w - r.left) / 2, 0, w, h);
+    if (w > 760) cam.setViewOffset(w, h, (w - r.left) / 2, -h * 0.09, w, h); // 위쪽 로고 자리만큼 캐릭터를 조금 내린다
     else cam.setViewOffset(w, h, 0, (h - r.top) / 2, w, h);
     cam.updateProjectionMatrix();
   }
@@ -173,7 +173,7 @@ export function createSelect(renderer, onStart) {
   }
 
   function dispose() {
-    root.hidden = true; $('rankboard').hidden = true; $('ach').hidden = true;
+    root.hidden = true; $('rankboard').hidden = true; $('ach').hidden = true; $('logo').hidden = true;
     $('title-sel').removeEventListener('change', onTitle); $('ach-open').removeEventListener('click', onAchOpen); $('ach-close').removeEventListener('click', onAchClose);
     nameEl.removeEventListener('input', onName); nameEl.removeEventListener('focus', onNameFocus); nameEl.removeEventListener('blur', onNameBlur); nameEl.removeEventListener('keydown', onNameKey);
     document.body.classList.remove('typing');

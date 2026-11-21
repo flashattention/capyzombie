@@ -303,3 +303,18 @@ body.touch #sk-e{right:32px;bottom:112px}
 body.touch #sk-b{right:32px;bottom:176px}
 .tbtn.small{right:calc(32px + env(safe-area-inset-right));bottom:calc(240px + env(safe-area-inset-bottom));width:54px;height:54px}
 .tbtn.small .ico{width:32px;height:32px}
+
+/* ── 캐릭터 선택 화면의 게임 로고: 화면 왼쪽 절반의 위쪽 가운데(캐릭터 위) ── */
+#logo{position:fixed;left:0;width:50%;top:clamp(14px,7vh,64px);text-align:center;pointer-events:none;user-select:none;-webkit-user-select:none;
+  font:400 clamp(42px,7.2vw,104px)/1 var(--display);color:#f7931e;letter-spacing:.02em;white-space:nowrap;
+  text-shadow:4px 0 var(--ink),-4px 0 var(--ink),0 4px var(--ink),0 -4px var(--ink),3px 3px var(--ink),-3px 3px var(--ink),3px -3px var(--ink),-3px -3px var(--ink),0 10px 0 var(--ink),0 14px 14px rgba(58,42,28,.25);
+  transform:rotate(-3deg);animation:logo-in .6s cubic-bezier(.2,1.5,.4,1) both}
+html:lang(ja) #logo,html:lang(zh-CN) #logo{font-weight:900}
+@keyframes logo-in{from{opacity:0;transform:rotate(-3deg) scale(.6)}to{opacity:1;transform:rotate(-3deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){ #logo{animation:none} }
+@media (max-height:500px){ #logo{top:12px;font-size:clamp(34px,6vw,64px);text-shadow:3px 0 var(--ink),-3px 0 var(--ink),0 3px var(--ink),0 -3px var(--ink),2px 2px var(--ink),-2px 2px var(--ink),2px -2px var(--ink),-2px -2px var(--ink),0 7px 0 var(--ink)} }
+/* 세로로 좁은 화면은 패널이 아래에 있으니 로고를 위쪽 전체 가운데에 */
+@media (max-width:760px){ #logo{width:100%;top:16px;font-size:clamp(38px,11vw,64px)} }
+/* 넓은 화면은 왼쪽 위에 랭킹 보드가 있으니, 랭킹 보드와 오른쪽 패널 사이 가운데에 */
+@media (min-width:981px){ #logo{left:380px;width:calc(100% - 380px - 440px);font-size:clamp(44px,5vw,96px)} }
+@media (min-width:981px) and (max-width:1180px){ #logo{left:320px;width:calc(100% - 320px - 440px)} }

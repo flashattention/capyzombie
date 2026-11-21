@@ -30,7 +30,7 @@ export function createGame(renderer, profile, onExit) {
   const map = getMap(profile.map), mapIdx = MAPS.indexOf(map), progress = loadProgress(), account = loadAccount();
   const unlockAll = location.search.includes('unlock');
   const ctxUp = { cleared: unlockAll ? MAPS.length : progress.cleared.length };
-  const sens = SENS * (progress.settings.sens || 1), touchSens = 0.006 * (progress.settings.sens || 1), aimHelp = progress.settings.aimAssist !== false;
+  const sens = SENS * (progress.settings.sens || 1), touchSens = 0.012 * (progress.settings.sens || 1), aimHelp = progress.settings.aimAssist !== false;
   initAudio(); setSound(progress.settings.sound !== false);
   // 난이도: 뒤 전장일수록 좀비가 단단하고 아프다. 시간이 갈수록 더 단단해진다.
   // 체력 ×1.4, 공격력 ×1.2씩 곱으로 오르고, 수와 속도·정예 비율도 는다. 대신 뒤 전장은 강화 카드를 미리 뽑고 시작한다.

@@ -4,5 +4,10 @@
   "webDir": "dist-app",
   "android": {
     "backgroundColor": "#cfe8dc"
+  },
+  "plugins": {
+    "SystemBars": {
+      "hidden": true
+    }
   }
 }
