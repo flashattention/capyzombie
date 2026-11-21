@@ -16,6 +16,7 @@ import { commitRun, awardRank, titleName, titleId, TIER } from './achievements.j
 import { getDiff } from './difficulty.js';
 import { t, num } from './i18n.js';
 import { isTouchDevice } from './quality.js';
+import { addTouchIcons } from './icons.js';
 
 const $ = id => document.getElementById(id);
 const PI = Math.PI, MAX_Z = 420, MAX_B = 320, ARENA = 110;
@@ -172,6 +173,7 @@ export function createGame(renderer, profile, onExit) {
   const lockNow = () => { if (!touchMode && !over && !paused && document.pointerLockElement !== canvas) { const p = canvas.requestPointerLock?.(); if (p && p.catch) p.catch(() => {}); } };
   const onLock = () => { locked = document.pointerLockElement === canvas; if (!touchMode) setMenu(!locked && !over && !paused); };
   // 터치 모드: 화면 버튼을 보이고 포인터 잠금을 쓰지 않는다. 터치 기기는 처음부터, 다른 기기는 처음 터치할 때 켠다.
+  addTouchIcons();
   const touchUi = () => { document.body.classList.add('touch'); $('pause-btn').hidden = over; $('touch').hidden = over; };
   const enterTouch = () => {
     if (touchMode && document.body.classList.contains('touch')) return;
@@ -929,7 +931,7 @@ export function createGame(renderer, profile, onExit) {
     $('kills').textContent = kills;
     $('time').textContent = fmtTime(time);
     const slot = (id, wait) => { const el = $(id); el.style.setProperty('--wait', Math.max(0, Math.min(1, wait)) * 100 + '%'); el.classList.toggle('ready', wait <= 0); };
-    slot('sk-b', b2 > 0 ? 0 : 1); $('sk-b-n').textContent = t('B2 폭격') + ' ×' + b2;
+    slot('sk-b', b2 > 0 ? 0 : 1); $('sk-b-n').textContent = t('B2 폭격') + ' ×' + b2; const bc = $('sk-b-c'); bc.textContent = b2; bc.hidden = !b2;
     slot('sk-m2', rocketCd / S.rocketCd); slot('sk-q', stompCd / S.stompCd); slot('sk-e', decoyCd / DECOY_CD); slot('sk-r', 1 - ult / ULT_KILLS);
     $('wave').textContent = boss ? t('보스전!') : endless ? t('무한 모드 · 다음 보스 {time}', { time: fmtTime(Math.max(0, nextBossAt - time)) }) : t('웨이브 {a}/{b} · 보스까지 {time}', { a: Math.min(BOSSES_TO_CLEAR, bossKills + 1), b: BOSSES_TO_CLEAR, time: fmtTime(Math.max(0, nextBossAt - time)) });
     if (boss) $('boss-fill').style.width = Math.max(0, boss.hp) / boss.maxHp * 100 + '%';

@@ -10,7 +10,7 @@ import { ACHS, CATS, TIER, TITLES, getState, chooseTitle } from './achievements.
 import { DIFFS, getDiff } from './difficulty.js';
 import { initAudio, setSound, sfx } from './audio.js';
 import { t, num, lang, LANGS, setLang } from './i18n.js';
-import { QUALITIES, getQuality, setQuality } from './quality.js';
+import { QUALITIES, getQuality, setQuality, isTouchDevice } from './quality.js';
 
 const $ = id => document.getElementById(id);
 
@@ -91,6 +91,10 @@ export function createSelect(renderer, onStart) {
   }
   const onName = () => { account.nick = profile.name = nameEl.value.trim().slice(0, 12); saveAccount(account); saveProfile(profile); checkNick(true); };
   const onDice = () => { nameEl.value = randomName(); onName(); };
+  // 휴대폰 키보드가 올라오면 화면이 낮아진다: "출발!" 고정을 풀고 입력칸을 가운데로 보이게 한다. 엔터를 누르면 키보드를 닫는다.
+  const onNameFocus = () => { document.body.classList.add('typing'); setTimeout(() => nameEl.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350); };
+  const onNameBlur = () => { document.body.classList.remove('typing'); };
+  const onNameKey = e => { if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); } };
   function chips(host, items, get, set, locked) {
     host.innerHTML = '';
     items.forEach(([id, label], i) => {
@@ -109,7 +113,7 @@ export function createSelect(renderer, onStart) {
     });
     $('perk').textContent = t('특성: {perk}', { perk: (RIDERS.find(r => r.id === profile.animal) || RIDERS[0]).perk });
     chips($('maps'), MAPS.map(m => [m.id, m.name]), () => profile.map, id => { profile.map = id; }, i => !isOpen(i));
-    profile.diff = getDiff(profile.diff).id;
+    profile.diff = getDiff(profile.diff || (isTouchDevice() ? 'easy' : 'normal')).id; // 처음 하는 모바일 이용자는 이지부터
     chips($('diffs'), DIFFS.map(d => [d.id, d.name]), () => profile.diff, id => { profile.diff = id; });
     $('diff-info').textContent = getDiff(profile.diff).desc;
     for (const slot of Object.keys(ACCESSORIES)) chips($('acc-' + slot), ACCESSORIES[slot], () => profile[slot], id => { profile[slot] = id; });
@@ -130,7 +134,7 @@ export function createSelect(renderer, onStart) {
     if (!checkNick(true)) { nameEl.focus(); return; } // 닉네임 없이는 시작할 수 없다
     saveProfile(profile); onStart({ ...profile });
   };
-  nameEl.addEventListener('input', onName);
+  nameEl.addEventListener('input', onName); nameEl.addEventListener('focus', onNameFocus); nameEl.addEventListener('blur', onNameBlur); nameEl.addEventListener('keydown', onNameKey);
   $('dice').addEventListener('click', onDice);
   $('go').addEventListener('click', onGo);
   sensEl.addEventListener('input', onSens); soundEl.addEventListener('change', onSound);
@@ -138,7 +142,7 @@ export function createSelect(renderer, onStart) {
   $('title-sel').addEventListener('change', onTitle); $('ach-open').addEventListener('click', onAchOpen); $('ach-close').addEventListener('click', onAchClose);
   renderTitle();
   refreshMap(); render(); refreshRider(); checkNick(false);
-  if (!account.nick) nameEl.focus();
+  if (!account.nick && !isTouchDevice()) nameEl.focus(); // 휴대폰은 키보드가 바로 올라와 화면을 가리지 않게 자동 포커스를 하지 않는다
 
   // ── 드래그 회전 ──
   const canvas = renderer.domElement;
@@ -171,7 +175,8 @@ export function createSelect(renderer, onStart) {
   function dispose() {
     root.hidden = true; $('rankboard').hidden = true; $('ach').hidden = true;
     $('title-sel').removeEventListener('change', onTitle); $('ach-open').removeEventListener('click', onAchOpen); $('ach-close').removeEventListener('click', onAchClose);
-    nameEl.removeEventListener('input', onName);
+    nameEl.removeEventListener('input', onName); nameEl.removeEventListener('focus', onNameFocus); nameEl.removeEventListener('blur', onNameBlur); nameEl.removeEventListener('keydown', onNameKey);
+    document.body.classList.remove('typing');
     $('dice').removeEventListener('click', onDice);
     $('go').removeEventListener('click', onGo);
     sensEl.removeEventListener('input', onSens); soundEl.removeEventListener('change', onSound);

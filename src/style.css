@@ -256,3 +256,38 @@ body:has(#over:not([hidden])) :is(#wave,#skills,#touch,#pause-btn){visibility:hi
 /* 개인정보처리방침 링크와 랭킹 ID */
 .legal{margin:10px 0 0;text-align:center;font-size:12px;color:var(--muted);user-select:text;-webkit-user-select:text}
 .legal a{color:var(--green)}
+
+/* ── 닉네임 입력 중(휴대폰 키보드가 올라와 화면이 낮아짐): "출발!"을 고정하지 않는다 ── */
+body.typing #select #go{position:static;box-shadow:0 5px 0 var(--ink)}
+body.typing #select #go:disabled{box-shadow:0 5px 0 var(--muted)}
+@media (max-height:320px){ #select #go{position:static} #select{top:6px;bottom:6px} }
+
+/* ── 터치 버튼: 오른손 엄지가 닿도록 오른쪽 아래 점프 버튼 둘레에 부채꼴로 배치하고 아이콘으로 표시 ──
+   점프 버튼 가운데(오른쪽·아래에서 59px)를 기준으로 안쪽 고리(반지름 112)에 로켓·발 구르기·미끼,
+   바깥 고리(반지름 196)에 미사일 난사·B2·시점을 둔다. 버튼 지름 60px. */
+.skill .ico{display:none}
+body.touch #skills{position:fixed;left:auto;top:auto;right:env(safe-area-inset-right);bottom:env(safe-area-inset-bottom);width:0;height:0;transform:none;display:block;pointer-events:none}
+body.touch .skill{position:absolute;width:60px;height:60px;padding:0;display:grid;place-items:center;border-radius:50%;pointer-events:auto}
+body.touch .skill span,body.touch .skill kbd{display:none}
+body.touch .skill .ico,.tbtn .ico{display:block;width:36px;height:36px;position:relative;z-index:0}
+body.touch .skill::after{z-index:1}
+body.touch #sk-m2{right:141px;bottom:29px}
+body.touch #sk-q{right:108px;bottom:108px}
+body.touch #sk-e{right:29px;bottom:141px}
+body.touch #sk-r{right:218px;bottom:80px;width:64px;height:64px}
+body.touch #sk-b{right:141px;bottom:190px}
+body.touch .skill.ult.ready{box-shadow:0 4px 0 var(--ink),0 0 0 5px rgba(242,193,78,.55)}
+.skill .cnt{display:none}
+body.touch .skill .cnt{display:grid;place-items:center;position:absolute;right:-2px;top:-2px;z-index:2;min-width:22px;height:22px;padding:0 5px;border-radius:99px;background:var(--red);color:#fff;border:2px solid var(--ink);font:400 13px var(--display)}
+.tbtn{display:grid;place-items:center}
+.tbtn.big{right:calc(18px + env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));width:82px;height:82px}
+.tbtn.big .ico{width:46px;height:46px}
+.tbtn.small{right:calc(46px + env(safe-area-inset-right));bottom:calc(224px + env(safe-area-inset-bottom));width:60px;height:60px}
+/* 낮은 가로 화면: 오른쪽 위가 버튼과 겹치지 않게 일시정지와 레이더를 왼쪽 위로 */
+@media (max-height:500px){
+  body.touch #pause-btn{left:calc(12px + env(safe-area-inset-left));right:auto;top:calc(8px + env(safe-area-inset-top))}
+  body.touch #radar{right:auto;left:calc(12px + env(safe-area-inset-left));top:calc(48px + env(safe-area-inset-top))}
+}
+/* 터치 버튼의 대기 시간: 원형으로 줄어드는 그늘. 배지가 잘리지 않게 버튼 밖으로 넘치게 둔다 */
+body.touch .skill{overflow:visible}
+body.touch .skill::after{inset:0;height:auto;border-radius:50%;background:conic-gradient(rgba(58,42,28,.6) var(--wait),transparent 0)}
