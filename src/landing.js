@@ -1,5 +1,9 @@
 // 랜딩페이지: 게임과 같은 모델로 만든 3D 미리보기 + 전장/라이더 전환
 import * as T from 'three';
+import '@fontsource/jua/400.css';
+import '@fontsource/ibm-plex-sans-kr/400.css';
+import '@fontsource/ibm-plex-sans-kr/500.css';
+import '@fontsource/ibm-plex-sans-kr/600.css';
 import './landing.css';
 import { add, addLights, setShadowArea } from './kit.js';
 import { buildCapy, animateCapy } from './models/capy.js';
@@ -7,6 +11,10 @@ import { RIDERS, buildRider } from './models/riders.js';
 import { buildZombie } from './models/zombies.js';
 import { MAPS, buildDiorama } from './maps.js';
 import { fetchTop, renderRank } from './rank.js';
+import { t, translateDom, lang, LANGS, setLang } from './i18n.js';
+import { makeRenderer } from './quality.js';
+
+translateDom();
 
 const $ = id => document.getElementById(id);
 const hex = n => '#' + n.toString(16).padStart(6, '0');
@@ -19,7 +27,7 @@ $('maps').innerHTML = MAPS.map(m => `
     <span class="sky" style="background:linear-gradient(${m.bg[0]},${m.bg[1]})"><i style="background:${hex(m.ground)}"></i></span>
     <h3>${m.name}</h3>
     <p>${m.blurb}</p>
-    <ul class="zlist">${m.zombies.map(z => `<li><span class="role">${z.role}</span><span>${z.name}</span></li>`).join('')}</ul>
+    <ul class="zlist">${m.zombies.map(z => `<li><span class="role">${t(z.role)}</span><span>${z.name}</span></li>`).join('')}</ul>
   </button>`).join('');
 
 function chips(host, items, current, pick) {
@@ -47,9 +55,7 @@ function setMap(m, scroll) {
 $('maps').addEventListener('click', e => { const b = e.target.closest('.map'); if (b) setMap(MAPS.find(m => m.id === b.dataset.map), true); });
 
 try {
-  renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer = makeRenderer({ canvas, alpha: true });
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(30, 1.6, 0.1, 100);
   const sun = addLights(scene); setShadowArea(sun, 6);
   const turn = new T.Group(); scene.add(turn);
@@ -78,7 +84,7 @@ try {
   wrap.addEventListener('click', () => {
     if (moved > 6 || !stage) return;
     stage.userData.zeds.forEach((z, i) => { if (z.position.y < 0.1) { z.userData.vy = 5 + Math.random() * 3 + i * 0.4; z.userData.spin = (Math.random() - 0.5) * 16; bonks++; } });
-    const el = $('bonk'); el.hidden = false; el.textContent = `날려 버린 좀비 ${bonks}마리`;
+    const el = $('bonk'); el.hidden = false; el.textContent = t('날려 버린 좀비 {n}마리', { n: bonks });
   });
   new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(wrap);
 
@@ -102,7 +108,7 @@ try {
   };
   requestAnimationFrame(frame);
 } catch (e) {
-  wrap.querySelector('.hint').textContent = '이 브라우저에서는 3D 미리보기를 표시할 수 없습니다';
+  wrap.querySelector('.hint').textContent = t('이 브라우저에서는 3D 미리보기를 표시할 수 없습니다');
   console.error(e);
 }
 
@@ -114,7 +120,14 @@ let rankMap = MAPS[0];
 function showRank(m) {
   rankMap = m;
   chips($('rank-tabs'), MAPS, () => rankMap, showRank);
-  $('rank-list').innerHTML = '<li class="none">불러오는 중…</li>';
+  $('rank-list').innerHTML = `<li class="none">${t('불러오는 중…')}</li>`;
   fetchTop(m.id).then(top => { if (rankMap === m) renderRank($('rank-list'), top, 10); });
 }
 showRank(MAPS[0]);
+
+// ── 언어 선택 ──
+const langSel = $('lang');
+if (langSel) {
+  langSel.innerHTML = LANGS.map(l => `<option value="${l.id}"${l.id === lang ? ' selected' : ''}>${l.name}</option>`).join('');
+  langSel.addEventListener('change', () => setLang(langSel.value));
+}

@@ -6,12 +6,23 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:app": "vite build --mode app && node scripts/app-index.mjs",
+    "cap:sync": "npm run build:app && cap sync android",
+    "cap:open": "cap open android",
+    "i18n": "node scripts/i18n.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@fontsource/ibm-plex-sans-kr": "^5.3.0",
+    "@fontsource/jua": "^5.3.0",
     "three": "0.160.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.6.2",
     "vite": "^5.4.0"
   }
 }

@@ -9,6 +9,8 @@ import { fetchTop, renderRank } from './rank.js';
 import { ACHS, CATS, TIER, TITLES, getState, chooseTitle } from './achievements.js';
 import { DIFFS, getDiff } from './difficulty.js';
 import { initAudio, setSound, sfx } from './audio.js';
+import { t, num, lang, LANGS, setLang } from './i18n.js';
+import { QUALITIES, getQuality, setQuality } from './quality.js';
 
 const $ = id => document.getElementById(id);
 
@@ -31,7 +33,7 @@ export function createSelect(renderer, onStart) {
     stage = buildDiorama(map, 2.6); turn.add(stage);
     scene.background.set(map.sky);
     const best = progress.best[map.id], cleared = progress.cleared.includes(map.id);
-    $('map-info').textContent = `${map.blurb} ` + (best ? `최고 기록 ${fmtTime(best.time)} · ${best.kills}마리${cleared ? ' · 클리어' : ''}` : '아직 기록이 없습니다.');
+    $('map-info').textContent = `${map.blurb} ` + (best ? t('최고 기록 {time} · {n}마리', { time: fmtTime(best.time), n: best.kills }) + (cleared ? ' · ' + t('클리어') : '') : t('아직 기록이 없습니다.'));
     saveProfile(profile);
     showBoard(map.id);
   }
@@ -41,19 +43,19 @@ export function createSelect(renderer, onStart) {
     boardMap = id; const m = getMap(id);
     const tabs = $('rb-tabs'); tabs.innerHTML = '';
     MAPS.forEach(x => { const b = document.createElement('button'); b.type = 'button'; b.id = 'rb-' + x.id; b.textContent = x.name; b.setAttribute('aria-pressed', x.id === id); b.onclick = () => showBoard(x.id); tabs.appendChild(b); });
-    $('rank-map').textContent = '· ' + m.name; $('rank').innerHTML = '<li class="none">불러오는 중…</li>';
+    $('rank-map').textContent = '· ' + m.name; $('rank').innerHTML = `<li class="none">${t('불러오는 중…')}</li>`;
     fetchTop(id).then(top => { if (boardMap === id) renderRank($('rank'), top, 10, account.nick); });
   }
   // 칭호와 메달, 업적 화면
   function renderTitle() {
     const st = getState(), sel = $('title-sel');
     sel.innerHTML = st.titles.map(t => `<option value="${t.id}"${t.id === st.title.id ? ' selected' : ''}>${t.name}</option>`).join('');
-    $('medals').textContent = `메달 ${st.total}/${ACHS.length} · 백금 ${st.medals[3]} · 금 ${st.medals[2]} · 은 ${st.medals[1]} · 동 ${st.medals[0]} · 칭호 ${st.titles.length}/${TITLES.length}`;
+    $('medals').textContent = t('메달 {a}/{b} · 백금 {p} · 금 {g} · 은 {s} · 동 {c} · 칭호 {ta}/{tb}', { a: st.total, b: ACHS.length, p: st.medals[3], g: st.medals[2], s: st.medals[1], c: st.medals[0], ta: st.titles.length, tb: TITLES.length });
     return st;
   }
   function renderAch() {
     const st = renderTitle(), have = new Set(st.titles.map(t => t.id));
-    $('ach-sum').textContent = `업적 ${st.total}/${ACHS.length}개 달성 · 백금 ${st.medals[3]} · 금 ${st.medals[2]} · 은 ${st.medals[1]} · 동 ${st.medals[0]} · 누적 처치 ${st.stats.kills.toLocaleString()}마리`;
+    $('ach-sum').textContent = t('업적 {a}/{b}개 달성 · 백금 {p} · 금 {g} · 은 {s} · 동 {c} · 누적 처치 {k}마리', { a: st.total, b: ACHS.length, p: st.medals[3], g: st.medals[2], s: st.medals[1], c: st.medals[0], k: num(st.stats.kills) });
     const tl = $('title-list'); tl.innerHTML = '';
     TITLES.forEach(t => {
       const b = document.createElement('button'); b.type = 'button'; b.id = 'tl-' + t.id; b.textContent = t.name; b.title = t.how;
@@ -62,7 +64,7 @@ export function createSelect(renderer, onStart) {
     });
     $('ach-list').innerHTML = CATS.map(c => `<h3>${c}</h3><ul class="achs">` + ACHS.filter(a => a.cat === c).map(a => {
       const cur = Math.min(a.goal, a.get(st.stats)), done = cur >= a.goal;
-      return `<li class="${done ? 'done' : ''}"><span class="md t${a.tier}">${TIER[a.tier].name}</span><b>${a.name}</b><span class="ds">${a.desc}${a.goal > 1 ? ` (${Math.floor(cur).toLocaleString()}/${a.goal.toLocaleString()})` : ''}</span><span class="pbar"><i style="width:${cur / a.goal * 100}%"></i></span></li>`;
+      return `<li class="${done ? 'done' : ''}"><span class="md t${a.tier}">${TIER[a.tier].name}</span><b>${a.name}</b><span class="ds">${a.desc}${a.goal > 1 ? ` (${num(Math.floor(cur))}/${num(a.goal)})` : ''}</span><span class="pbar"><i style="width:${cur / a.goal * 100}%"></i></span></li>`;
     }).join('') + '</ul>').join('');
   }
   const onTitle = () => chooseTitle($('title-sel').value);
@@ -79,11 +81,11 @@ export function createSelect(renderer, onStart) {
   // ── UI ──
   const root = $('select'); root.hidden = false; $('rankboard').hidden = false;
   const nameEl = $('name'), msgEl = $('nick-msg'), goEl = $('go'); nameEl.value = account.nick;
-  const NICK_HELP = '닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.';
+  const NICK_HELP = t('닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.');
   function checkNick(warn) {
     const ok = validNick(nameEl.value);
     goEl.disabled = !ok; nameEl.classList.toggle('bad', !ok && warn); msgEl.classList.toggle('bad', !ok && warn);
-    msgEl.textContent = ok || !warn ? NICK_HELP : '닉네임을 2자 이상 입력해야 시작할 수 있습니다.';
+    msgEl.textContent = ok || !warn ? NICK_HELP : t('닉네임을 2자 이상 입력해야 시작할 수 있습니다.');
     return ok;
   }
   const onName = () => { account.nick = profile.name = nameEl.value.trim().slice(0, 12); saveAccount(account); saveProfile(profile); checkNick(true); };
@@ -93,8 +95,8 @@ export function createSelect(renderer, onStart) {
     items.forEach(([id, label], i) => {
       const b = document.createElement('button'); b.type = 'button'; b.id = host.id + '-' + id;
       const lock = locked && locked(i);
-      b.textContent = lock ? label + ' · 잠김' : label; b.disabled = !!lock;
-      if (lock) b.title = `「${items[i - 1][1]}」을 클리어하면 열립니다`;
+      b.textContent = lock ? label + ' · ' + t('잠김') : label; b.disabled = !!lock;
+      if (lock) b.title = t('「{map}」을 클리어하면 열립니다', { map: items[i - 1][1] });
       b.setAttribute('aria-pressed', get() === id);
       b.onclick = () => { initAudio(); sfx.pickup(); set(id); render(); refreshRider(); refreshMap(); };
       host.appendChild(b);
@@ -104,7 +106,7 @@ export function createSelect(renderer, onStart) {
     chips($('animals'), RIDERS.map(r => [r.id, r.label]), () => profile.animal, id => {
       if (id !== profile.animal) Object.assign(profile, { animal: id }, RIDERS.find(r => r.id === id).def);
     });
-    $('perk').textContent = '특성: ' + (RIDERS.find(r => r.id === profile.animal) || RIDERS[0]).perk;
+    $('perk').textContent = t('특성: {perk}', { perk: (RIDERS.find(r => r.id === profile.animal) || RIDERS[0]).perk });
     chips($('maps'), MAPS.map(m => [m.id, m.name]), () => profile.map, id => { profile.map = id; }, i => !isOpen(i));
     profile.diff = getDiff(profile.diff).id;
     chips($('diffs'), DIFFS.map(d => [d.id, d.name]), () => profile.diff, id => { profile.diff = id; });
@@ -112,7 +114,14 @@ export function createSelect(renderer, onStart) {
     for (const slot of Object.keys(ACCESSORIES)) chips($('acc-' + slot), ACCESSORIES[slot], () => profile[slot], id => { profile[slot] = id; });
   }
   // 설정
-  const sensEl = $('sens'), soundEl = $('sound');
+  const sensEl = $('sens'), soundEl = $('sound'), langEl = $('lang-sel'), aimEl = $('aim-assist');
+  langEl.innerHTML = LANGS.map(l => `<option value="${l.id}"${l.id === lang ? ' selected' : ''}>${l.name}</option>`).join('');
+  aimEl.checked = progress.settings.aimAssist !== false;
+  const quality = getQuality();
+  chips($('quality'), QUALITIES.map(q => [q.id, q.name]), () => quality.id, id => { if (id !== quality.id) setQuality(id); });
+  $('quality-info').textContent = quality.desc;
+  const onLang = () => setLang(langEl.value);
+  const onAim = () => { progress.settings.aimAssist = aimEl.checked; saveProgress(progress); };
   sensEl.value = progress.settings.sens; $('sens-val').textContent = (+sensEl.value).toFixed(1); soundEl.checked = progress.settings.sound !== false;
   const onSens = () => { progress.settings.sens = +sensEl.value; $('sens-val').textContent = (+sensEl.value).toFixed(1); saveProgress(progress); };
   const onSound = () => { progress.settings.sound = soundEl.checked; saveProgress(progress); initAudio(); setSound(soundEl.checked); if (soundEl.checked) sfx.level(); };
@@ -124,6 +133,7 @@ export function createSelect(renderer, onStart) {
   $('dice').addEventListener('click', onDice);
   $('go').addEventListener('click', onGo);
   sensEl.addEventListener('input', onSens); soundEl.addEventListener('change', onSound);
+  langEl.addEventListener('change', onLang); aimEl.addEventListener('change', onAim);
   $('title-sel').addEventListener('change', onTitle); $('ach-open').addEventListener('click', onAchOpen); $('ach-close').addEventListener('click', onAchClose);
   renderTitle();
   refreshMap(); render(); refreshRider(); checkNick(false);
@@ -164,8 +174,11 @@ export function createSelect(renderer, onStart) {
     $('dice').removeEventListener('click', onDice);
     $('go').removeEventListener('click', onGo);
     sensEl.removeEventListener('input', onSens); soundEl.removeEventListener('change', onSound);
+    langEl.removeEventListener('change', onLang); aimEl.removeEventListener('change', onAim);
     canvas.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up);
     cam.clearViewOffset();
   }
-  return { update, resize, dispose };
+  // 안드로이드 뒤로 가기: 업적 창이 열려 있으면 닫고, 아니면 앱을 닫게 둔다
+  const back = () => { if (!$('ach').hidden) { onAchClose(); return true; } return false; };
+  return { update, resize, dispose, back };
 }

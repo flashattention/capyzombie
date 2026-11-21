@@ -33,11 +33,16 @@ async function top(map, n = 20) {
   if (!ids || !ids.length) return [];
   const keys = ids.filter((_, i) => i % 2 === 0);
   const [details] = await redis([['HMGET', `lbd:${map}`, ...keys]]);
-  return keys.map((id, i) => { let d = {}; try { d = JSON.parse(details[i]) || {}; } catch (e) { /* 무시 */ } return { name: d.name || '이름 없음', title: d.title || '', diff: d.diff || 'normal', score: +ids[i * 2 + 1], kills: d.kills || 0, time: d.time || 0, level: d.level || 1, animal: d.animal || 'duck', cleared: !!d.cleared }; });
+  return keys.map((id, i) => { let d = {}; try { d = JSON.parse(details[i]) || {}; } catch (e) { /* 무시 */ } return { name: d.name || '', title: d.title || '', titleId: d.tid || '', diff: d.diff || 'normal', score: +ids[i * 2 + 1], kills: d.kills || 0, time: d.time || 0, level: d.level || 1, animal: d.animal || 'duck', cleared: !!d.cleared }; });
 }
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  // 모바일 앱(Capacitor)은 다른 출처(https://localhost 등)에서 부르므로 CORS를 연다. 쿠키는 쓰지 않는다.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (!URL_ || !TOKEN) return res.status(503).json({ error: 'not_configured' });
   try {
     if (req.method === 'GET') {
@@ -54,10 +59,12 @@ export default async function handler(req, res) {
       const diff = SCORE_MULT[b.diff] ? b.diff : 'normal';
       const score = scoreOf(kills, time, !!b.cleared, diff);
       const [old] = await redis([['ZSCORE', `lb:${map}`, id]]);
-      const detail = JSON.stringify({ name, diff, title: String(b.title || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20), kills, time: Math.floor(time), level, animal: String(b.animal || 'duck').slice(0, 12), cleared: !!b.cleared });
+      const title = String(b.title || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20);
+      const tid = String(b.titleId || '').replace(/[^a-z0-9_]/gi, '').slice(0, 40); // 칭호 id: 보는 사람의 언어로 칭호를 보여 주는 데 쓴다
+      const detail = JSON.stringify({ name, diff, title, tid, kills, time: Math.floor(time), level, animal: String(b.animal || 'duck').slice(0, 12), cleared: !!b.cleared });
       if (old == null || score > +old) await redis([['ZADD', `lb:${map}`, score, id], ['HSET', `lbd:${map}`, id, detail]]);
       else await redis([['HGET', `lbd:${map}`, id]]).then(async ([d]) => { // 닉네임만 바뀐 경우 반영
-        try { const o = JSON.parse(d); if (o && (o.name !== name || o.title !== b.title)) { o.name = name; o.title = String(b.title || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20); await redis([['HSET', `lbd:${map}`, id, JSON.stringify(o)]]); } } catch (e) { /* 무시 */ }
+        try { const o = JSON.parse(d); if (o && (o.name !== name || o.title !== title || o.tid !== tid)) { o.name = name; o.title = title; o.tid = tid; await redis([['HSET', `lbd:${map}`, id, JSON.stringify(o)]]); } } catch (e) { /* 무시 */ }
       });
       const [rank] = await redis([['ZREVRANK', `lb:${map}`, id]]);
       return res.status(200).json({ rank: rank == null ? null : rank + 1, score, best: Math.max(score, +old || 0), top: await top(map, 10) });

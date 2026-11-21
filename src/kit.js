@@ -42,11 +42,14 @@ export function eye(type, r) {
   return g;
 }
 
+// 그림자 해상도: 그래픽 품질 설정에 따라 main.js가 바꾼다
+let shadowSize = 2048;
+export const setShadowSize = n => { shadowSize = n; };
 export function addLights(scene, o = {}) {
   scene.add(new T.HemisphereLight(o.sky ?? 0xfff4dc, o.ground ?? 0x8a7a5a, o.hemi ?? 2.4));
   const sun = new T.DirectionalLight(o.sunColor ?? 0xffffff, o.sun ?? 3.0);
   sun.position.set(4, 9, 5); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   sun.shadow.bias = -0.0015; sun.shadow.normalBias = 0.03;
   scene.add(sun); scene.add(sun.target);
   return sun;

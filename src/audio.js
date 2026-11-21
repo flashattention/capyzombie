@@ -12,6 +12,9 @@ export function initAudio() {
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   } catch (e) { ctx = null; }
 }
+// 앱이 백그라운드로 가거나 탭이 가려지면 소리를 멈춘다
+export function suspendAudio() { if (ctx && ctx.state === 'running') ctx.suspend(); }
+export function resumeAudio() { if (ctx && ctx.state === 'suspended') ctx.resume(); }
 export function setSound(on) { enabled = on; if (master) master.gain.value = on ? 0.5 : 0; }
 
 function tone(freq, dur, type, vol, to, delay = 0) {

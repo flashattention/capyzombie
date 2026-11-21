@@ -12,22 +12,24 @@ import { BASE_STATS, UPGRADES, FUSIONS, rollChoices, xpForLevel, nameOf, recipes
 import { loadProgress, loadAccount, recordRun, fmtTime } from './save.js';
 import { initAudio, setSound, sfx } from './audio.js';
 import { submitRun, renderRank } from './rank.js';
-import { commitRun, awardRank, titleName, TIER } from './achievements.js';
+import { commitRun, awardRank, titleName, titleId, TIER } from './achievements.js';
 import { getDiff } from './difficulty.js';
+import { t, num } from './i18n.js';
+import { isTouchDevice } from './quality.js';
 
 const $ = id => document.getElementById(id);
 const PI = Math.PI, MAX_Z = 420, MAX_B = 320, ARENA = 110;
 const WALK = 5.2, SPRINT = 11, JUMP = 8.8, GRAV = 22, SENS = 0.0022, BULLET = 70;
 const DECOY_CD = 14, ULT_KILLS = 100, BARRAGE_TIME = 3.2, BOSS_EVERY = 60, BOSSES_TO_CLEAR = 3, COMBO_TIME = 3, CRATE_EVERY = 38, BUFF_TIME = 12;
-const CHEERS = ['좋아요!', '멈추지 마세요!', '대학살!', '카피바라 폭주!', '전설의 라이더!'];
-const BUFFS = [{ id: 'double', name: '두 배 화력' }, { id: 'rapid', name: '폭풍 연사' }, { id: 'shield', name: '귤 방패' }, { id: 'feast', name: '귤 잔치' }];
+const CHEERS = [t('좋아요!'), t('멈추지 마세요!'), t('대학살!'), t('카피바라 폭주!'), t('전설의 라이더!')];
+const BUFFS = [{ id: 'double', name: t('두 배 화력') }, { id: 'rapid', name: t('폭풍 연사') }, { id: 'shield', name: t('귤 방패') }, { id: 'feast', name: t('귤 잔치') }];
 const MINT = new T.Color(0x7dffb0), HOT = new T.Color(2.2, 0.5, 0.4), WHITE = new T.Color(1, 1, 1), HIT = new T.Color(2.4, 2.4, 2.4), GOLD = new T.Color(1.7, 1.35, 0.45), ICE = new T.Color(0.6, 0.85, 1.6);
 
 export function createGame(renderer, profile, onExit) {
   const map = getMap(profile.map), mapIdx = MAPS.indexOf(map), progress = loadProgress(), account = loadAccount();
   const unlockAll = location.search.includes('unlock');
   const ctxUp = { cleared: unlockAll ? MAPS.length : progress.cleared.length };
-  const sens = SENS * (progress.settings.sens || 1);
+  const sens = SENS * (progress.settings.sens || 1), touchSens = 0.006 * (progress.settings.sens || 1), aimHelp = progress.settings.aimAssist !== false;
   initAudio(); setSound(progress.settings.sound !== false);
   // 난이도: 뒤 전장일수록 좀비가 단단하고 아프다. 시간이 갈수록 더 단단해진다.
   // 체력 ×1.4, 공격력 ×1.2씩 곱으로 오르고, 수와 속도·정예 비율도 는다. 대신 뒤 전장은 강화 카드를 미리 뽑고 시작한다.
@@ -113,7 +115,7 @@ export function createGame(renderer, profile, onExit) {
   add(bomber, ell(5.5, 0.8, 2.6, 0x3a3f4a)); add(bomber, ell(1.6, 0.5, 1.1, 0x7df9ff, { flat: 1 }), 2.6, 0.45, 0);
   [1, -1].forEach(s => {
     const w = add(bomber, box(11, 0.35, 4.2, 0x3a3f4a), -2.4, 0, s * 6.2); w.rotation.y = s * 0.62;
-    const t = add(bomber, box(5, 0.3, 2.4, 0x2f333d), -6.2, 0, s * 12.2); t.rotation.y = s * 0.62;
+    const tl = add(bomber, box(5, 0.3, 2.4, 0x2f333d), -6.2, 0, s * 12.2); tl.rotation.y = s * 0.62;
     add(bomber, cyl(0.6, 2.6, 0x23252f, { axis: 'x' }), -1.5, -0.35, s * 2.4); add(bomber, ell(0.5, 0.5, 0.5, 0xffa94d, { flat: 1 }), -3, -0.35, s * 2.4);
   });
   add(bomber, ell(1.1, 0.3, 1.1, 0xf7931e), -0.5, 0.75, 0); // 귤 문양
@@ -164,11 +166,18 @@ export function createGame(renderer, profile, onExit) {
   // ── 입력: 마우스 조준(포인터 잠금) + 키보드, 터치는 왼쪽 이동·오른쪽 조준 ──
   const canvas = renderer.domElement, keys = {};
   const stick = { x: 0, y: 0, id: null, o: null }, look = { id: null, last: null };
-  let jumpQueued = false, fireHeld = false, rocketHeld = false, locked = false, touchMode = false, autoAim = false, menuOpen = false;
+  let jumpQueued = false, fireHeld = false, rocketHeld = false, locked = false, touchMode = isTouchDevice(), autoAim = false, menuOpen = false;
   const want = { q: false, e: false, r: false, b: false };
   const setMenu = on => { menuOpen = on; $('pause').hidden = !on; if (on) renderBuild(); $('cross').hidden = on || paused || over; if (on) { fireHeld = rocketHeld = false; for (const k in keys) keys[k] = false; } };
   const lockNow = () => { if (!touchMode && !over && !paused && document.pointerLockElement !== canvas) { const p = canvas.requestPointerLock?.(); if (p && p.catch) p.catch(() => {}); } };
   const onLock = () => { locked = document.pointerLockElement === canvas; if (!touchMode) setMenu(!locked && !over && !paused); };
+  // 터치 모드: 화면 버튼을 보이고 포인터 잠금을 쓰지 않는다. 터치 기기는 처음부터, 다른 기기는 처음 터치할 때 켠다.
+  const touchUi = () => { document.body.classList.add('touch'); $('pause-btn').hidden = over; $('touch').hidden = over; };
+  const enterTouch = () => {
+    if (touchMode && document.body.classList.contains('touch')) return;
+    touchMode = true; if (document.pointerLockElement === canvas) document.exitPointerLock();
+    setMenu(false); touchUi();
+  };
   const kd = e => {
     if (paused && /^Digit[123]$/.test(e.code)) { choose(+e.code[5] - 1); return; }
     if (e.code === 'Space') { jumpQueued = true; e.preventDefault(); }
@@ -187,8 +196,8 @@ export function createGame(renderer, profile, onExit) {
   const md = e => {
     initAudio();
     if (e.pointerType === 'touch') {
-      if (!touchMode) { touchMode = true; setMenu(false); $('pause-btn').hidden = false; }
-      if (e.clientX < W / 2 && stick.id === null) { stick.id = e.pointerId; stick.o = [e.clientX, e.clientY]; }
+      enterTouch();
+      if (e.clientX < W / 2 && stick.id === null) { stick.id = e.pointerId; stick.o = [e.clientX, e.clientY]; const el = $('stick'); el.hidden = false; el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px'; el.firstChild.style.transform = ''; }
       else if (look.id === null) { look.id = e.pointerId; look.last = [e.clientX, e.clientY]; fireHeld = true; }
       else jumpQueued = true;
       return;
@@ -199,13 +208,30 @@ export function createGame(renderer, profile, onExit) {
   const mdn = e => { if (touchMode) return; if (!locked) { lockNow(); return; } if (e.button === 0) fireHeld = true; if (e.button === 2) rocketHeld = true; };
   const mup = e => { if (e.button === 0) fireHeld = false; if (e.button === 2) rocketHeld = false; };
   const mv = e => {
-    if (e.pointerId === stick.id) { const dx = e.clientX - stick.o[0], dy = e.clientY - stick.o[1], l = Math.hypot(dx, dy); stick.x = l > 8 ? dx / Math.max(l, 60) : 0; stick.y = l > 8 ? dy / Math.max(l, 60) : 0; }
-    else if (e.pointerId === look.id) { P.yaw -= (e.clientX - look.last[0]) * 0.006; P.pitch = Math.max(-1.2, Math.min(1.1, P.pitch - (e.clientY - look.last[1]) * 0.006)); look.last = [e.clientX, e.clientY]; }
+    if (e.pointerId === stick.id) { const dx = e.clientX - stick.o[0], dy = e.clientY - stick.o[1], l = Math.hypot(dx, dy); stick.x = l > 8 ? dx / Math.max(l, 60) : 0; stick.y = l > 8 ? dy / Math.max(l, 60) : 0; const k = Math.min(l, 50) / (l || 1); $('stick').firstChild.style.transform = `translate(${dx * k}px,${dy * k}px)`; }
+    else if (e.pointerId === look.id) { P.yaw -= (e.clientX - look.last[0]) * touchSens; P.pitch = Math.max(-1.2, Math.min(1.1, P.pitch - (e.clientY - look.last[1]) * touchSens)); look.last = [e.clientX, e.clientY]; }
   };
   const mu = e => {
-    if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; }
+    if (e.pointerId === stick.id) { stick.id = null; stick.x = stick.y = 0; $('stick').hidden = true; }
     else if (e.pointerId === look.id) { look.id = null; fireHeld = false; }
   };
+  // 터치 버튼: 로켓(누르는 동안), 스킬 Q·E·R·B, 점프(누르고 있으면 제트팩), 시점 전환
+  const ACTS = { 'sk-m2': 'rocket', 'sk-q': 'q', 'sk-e': 'e', 'sk-r': 'r', 'sk-b': 'b', 't-jump': 'jump', 't-view': 'view' };
+  const tDown = e => {
+    e.preventDefault(); initAudio(); enterTouch();
+    if (over || paused || menuOpen) return;
+    const a = ACTS[e.currentTarget.id]; e.currentTarget.classList.add('down');
+    if (a === 'rocket') rocketHeld = true;
+    else if (a === 'jump') { jumpQueued = true; keys.Space = true; }
+    else if (a === 'view') { firstPerson = !firstPerson; applyView(); }
+    else want[a] = true;
+  };
+  const tUp = e => {
+    const a = ACTS[e.currentTarget.id]; e.currentTarget.classList.remove('down');
+    if (a === 'rocket') rocketHeld = false; else if (a === 'jump') keys.Space = false;
+  };
+  const TUPS = ['pointerup', 'pointercancel', 'pointerleave'];
+  Object.keys(ACTS).forEach(id => { const el = $(id); el.addEventListener('pointerdown', tDown); TUPS.forEach(n => el.addEventListener(n, tUp)); });
   const noMenu = e => e.preventDefault();
   window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
   document.addEventListener('mousemove', mm); document.addEventListener('pointerlockchange', onLock);
@@ -213,7 +239,7 @@ export function createGame(renderer, profile, onExit) {
   canvas.addEventListener('contextmenu', noMenu); canvas.addEventListener('mousedown', mdn); window.addEventListener('mouseup', mup);
 
   // ── HUD와 메뉴 버튼 ──
-  const SHOW = ['hud', 'xp', 'help', 'cross', 'skills', 'wave', 'radar'], ALL = [...SHOW, 'tag', 'over', 'levelup', 'pause', 'boss', 'combo', 'banner', 'pause-btn', 'buff'];
+  const SHOW = ['hud', 'xp', 'help', 'cross', 'skills', 'wave', 'radar'], ALL = [...SHOW, 'tag', 'over', 'levelup', 'pause', 'boss', 'combo', 'banner', 'pause-btn', 'buff', 'touch'];
   ALL.forEach(id => { $(id).hidden = true; }); SHOW.forEach(id => { $(id).hidden = false; });
   $('hud-name').textContent = `[${myTitle}] ${profile.name}`; $('tag').textContent = profile.name; $('map-name').textContent = `${map.name} · ${D.name} · ${R.label} (${R.perk})`;
   const toMain = () => { location.href = '/'; };
@@ -230,6 +256,7 @@ export function createGame(renderer, profile, onExit) {
   let boss = null, bossCount = 0, bossKills = 0, nextBossAt = BOSS_EVERY, endless = false, winPending = false, jetting = false;
   const dummy = new T.Object3D(), v = new T.Vector3(), eye = new T.Vector3(), fwd = new T.Vector3(), aim = new T.Vector3(), UP = new T.Vector3(0, 1, 0);
   applyView(); lockNow(); onLock();
+  if (touchMode) touchUi();
   if (freePicks > 0) offer();
 
   function banner(text) { const el = $('banner'); el.textContent = text; el.hidden = false; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); bannerT = 2.4; }
@@ -259,26 +286,26 @@ export function createGame(renderer, profile, onExit) {
     const a = Math.random() * PI * 2, hp = (420 + 340 * (bossCount - 1)) * hpMap;
     const type = BOSS0 + (bossCount - 1) % 3, Z = ZT[type];
     boss = { type, x: clampA(P.x + Math.cos(a) * 26), y: 0, z: clampA(P.z + Math.sin(a) * 26), hp, max: hp, maxHp: hp, ph: 0, hit: 0, climb: 0, blocked: false, cd: 4, slow: 0, ot: 0, ai: 0, snipe: 0, spiral: 0, st: 0, st2: 0 };
-    zs.push(boss); $('boss').hidden = false; $('boss-name').textContent = Z.name + (Z.ranged ? ' · 원거리' : '');
-    banner('보스 출현! ' + Z.name); sfx.boss();
+    zs.push(boss); $('boss').hidden = false; $('boss-name').textContent = Z.name + (Z.ranged ? ' · ' + t('원거리') : '');
+    banner(t('보스 출현! {name}', { name: Z.name })); sfx.boss();
   }
   // 보스 고유 패턴
   // 보스 패턴: 보스마다 가진 패턴을 차례로 쓴다
   function bossAct(q) {
     const Z = ZT[q.type], ab = Z.abilities[q.ai++ % Z.abilities.length], hy = q.y + Z.s * 1.1;
     const dx = P.x - q.x, dz = P.z - q.z, d = Math.hypot(dx, dz) || 1;
-    if (ab === 'summon') { for (let k = 0; k < 6; k++) spawnAt(1, q.x + Math.cos(k) * 3, q.z + Math.sin(k) * 3); banner('보스가 부하를 불러냅니다!'); }
-    else if (ab === 'bombs') { for (let k = 0; k < 4; k++) spawnAt(3, q.x + Math.cos(k * 1.6) * 3, q.z + Math.sin(k * 1.6) * 3); banner('폭탄 좀비가 쏟아집니다!'); }
+    if (ab === 'summon') { for (let k = 0; k < 6; k++) spawnAt(1, q.x + Math.cos(k) * 3, q.z + Math.sin(k) * 3); banner(t('보스가 부하를 불러냅니다!')); }
+    else if (ab === 'bombs') { for (let k = 0; k < 4; k++) spawnAt(3, q.x + Math.cos(k * 1.6) * 3, q.z + Math.sin(k * 1.6) * 3); banner(t('폭탄 좀비가 쏟아집니다!')); }
     else if (ab === 'volley') {
       for (let k = 0; k < 16; k++) { const a = k / 16 * PI * 2; es.push({ x: q.x, y: hy, z: q.z, vx: Math.cos(a) * 9, vy: 0, vz: Math.sin(a) * 9, life: 4 }); }
       [-0.15, 0, 0.15].forEach(o => es.push({ x: q.x, y: hy, z: q.z, vx: (dx / d - dz / d * o) * 13, vy: (P.y + 1.2 - hy) / (d / 13), vz: (dz / d + dx / d * o) * 13, life: 4 }));
-      banner('사방으로 쏩니다!');
-    } else if (ab === 'snipe') { q.snipe = 6; q.st = 0.5; banner('저격! 옆으로 계속 움직이세요'); }
-    else if (ab === 'spiral') { q.spiral = 3.2; banner('탄막! 사이로 빠져나가세요'); }
+      banner(t('사방으로 쏩니다!'));
+    } else if (ab === 'snipe') { q.snipe = 6; q.st = 0.5; banner(t('저격! 옆으로 계속 움직이세요')); }
+    else if (ab === 'spiral') { q.spiral = 3.2; banner(t('탄막! 사이로 빠져나가세요')); }
     else if (ab === 'mortar') {
       for (let k = 0; k < 6 && marks.length < 24; k++) { const a = Math.random() * PI * 2, r = k ? Math.random() * 7 : 0; marks.push({ x: P.x + Math.cos(a) * r, y: P.y, z: P.z + Math.sin(a) * r, t: 1.2 + k * 0.12, r: 2.8 }); }
-      banner('포격! 붉은 원에서 벗어나세요');
-    } else { slam = { x: q.x, y: q.y, z: q.z, r: 2, hit: false }; shake = 0.4; sfx.stomp(); banner('충격파! 점프로 피하세요'); }
+      banner(t('포격! 붉은 원에서 벗어나세요'));
+    } else { slam = { x: q.x, y: q.y, z: q.z, r: 2, hit: false }; shake = 0.4; sfx.stomp(); banner(t('충격파! 점프로 피하세요')); }
   }
   // 처치. power가 있으면 (fx,fz) 방향으로 날려 보낸다.
   function kill(i, fx, fz, power = 0) {
@@ -291,7 +318,7 @@ export function createGame(renderer, profile, onExit) {
       gems.push({ x: q.x, y: q.y, z: q.z, heart: true, ph: 0 });
       dropB2(q.x + 1.5, q.z);
       rerolls++;
-      if (bossKills >= BOSSES_TO_CLEAR && !endless) winPending = true; else banner(`보스 처치! 웨이브 ${bossKills + 1}`);
+      if (bossKills >= BOSSES_TO_CLEAR && !endless) winPending = true; else banner(t('보스 처치! 웨이브 {n}', { n: bossKills + 1 }));
     } else {
       if (power && flyers.length < 80) flyers.push({ type: q.type, x: q.x, y: q.y, z: q.z, vx: fx * power, vy: 5 + Math.random() * 4, vz: fz * power, rot: 0, spin: 8 + Math.random() * 8, yaw: Math.random() * 6 });
       if (gems.length < 400) gems.push({ x: q.x, y: q.y, z: q.z, v: Z.xp * (q.elite ? 6 : 1), ph: Math.random() * 6 });
@@ -304,7 +331,7 @@ export function createGame(renderer, profile, onExit) {
     zs[i] = zs[zs.length - 1]; zs.pop(); kills++; ult = Math.min(ULT_KILLS, ult + S.ultRate); sfx.kill();
     if (S.leech && Math.random() < 0.04 * S.leech) P.hp = Math.min(S.maxHp, P.hp + 2);
     combo++; comboT = COMBO_TIME; maxCombo = Math.max(maxCombo, combo);
-    if (combo % 25 === 0) { gems.push({ x: P.x + fwd.x * 2.5, y: P.y, z: P.z + fwd.z * 2.5, heart: true, ph: 0 }); banner(`${combo} 연속! ${CHEERS[Math.min(CHEERS.length - 1, combo / 25 - 1)]}`); sfx.combo(); }
+    if (combo % 25 === 0) { gems.push({ x: P.x + fwd.x * 2.5, y: P.y, z: P.z + fwd.z * 2.5, heart: true, ph: 0 }); banner(t('{n} 연속!', { n: combo }) + ' ' + CHEERS[Math.min(CHEERS.length - 1, combo / 25 - 1)]); sfx.combo(); }
   }
   function boom(x, y, z, color, size) {
     const m = new T.Mesh(boomGeo, new T.MeshBasicMaterial({ color, transparent: true }));
@@ -324,20 +351,20 @@ export function createGame(renderer, profile, onExit) {
     if (!choices.length) { P.hp = Math.min(S.maxHp, P.hp + 20); freePicks = 0; return false; } // 전부 최대면 체력만 회복
     paused = true; fireHeld = rocketHeld = false;
     if (document.pointerLockElement === canvas) document.exitPointerLock();
-    $('lv-title').textContent = freePicks > 0 ? `출전 준비: 강화 ${freePicks}개` : `레벨 ${level}!`;
-    $('lv-sub').textContent = freePicks > 0 ? `${map.name}은 험합니다. 시작하기 전에 강화를 미리 고르세요.` : '강화 하나를 고르세요. 숫자 키 1 · 2 · 3으로도 고를 수 있어요.';
+    $('lv-title').textContent = freePicks > 0 ? t('출전 준비: 강화 {n}개', { n: freePicks }) : t('레벨 {n}!', { n: level });
+    $('lv-sub').textContent = freePicks > 0 ? t('{map}은 험합니다. 시작하기 전에 강화를 미리 고르세요.', { map: map.name }) : touchMode ? t('강화 하나를 고르세요.') : t('강화 하나를 고르세요. 숫자 키 1 · 2 · 3으로도 고를 수 있어요.');
     const host = $('choices'); host.innerHTML = '';
     choices.forEach((u, i) => {
       const b = document.createElement('button'); b.type = 'button'; b.id = 'choice-' + i;
-      b.className = 'choice' + (u.fusion ? ' fusion' : u.gear ? ' gear' : u.group === '새 무기' ? ' fresh' : '');
+      b.className = 'choice' + (u.fusion ? ' fusion' : u.gear ? ' gear' : u.group === t('새 무기') ? ' fresh' : '');
       const lv = levels[u.id] || 0;
       // 이 강화가 재료인 합성 조합을 알려 준다
-      const hint = u.fusion ? `재료: ${recipeText(u)}` : recipesWith(u.id).filter(f => !levels[f.id]).map(f => `합성 → ${f.name} (${recipeText(f)})`).join(' / ');
+      const hint = u.fusion ? t('재료: {r}', { r: recipeText(u) }) : recipesWith(u.id).filter(f => !levels[f.id]).map(f => t('합성 → {name} ({r})', { name: f.name, r: recipeText(f) })).join(' / ');
       b.innerHTML = `<span class="key">${i + 1}</span><span class="grp">${u.group}</span><b>${u.name}</b><span class="desc">${u.desc}</span>${hint ? `<span class="hintf">${hint}</span>` : ''}<span class="pips">${'●'.repeat(lv)}<i>●</i>${'○'.repeat(Math.max(0, u.max - lv - 1))}</span>`;
       b.onclick = () => choose(i);
       host.appendChild(b);
     });
-    $('reroll').textContent = `다시 뽑기 (${rerolls}회 남음)`; $('reroll').disabled = rerolls <= 0;
+    $('reroll').textContent = t('다시 뽑기 ({n}회 남음)', { n: rerolls }); $('reroll').disabled = rerolls <= 0;
     $('levelup').hidden = false; $('pause').hidden = true; $('cross').hidden = true;
     return true;
   }
@@ -347,7 +374,7 @@ export function createGame(renderer, profile, onExit) {
     const u = choices[i]; if (!paused || !u) return;
     if (u.gear && !levels[u.id]) addGear(capy, u.gear);
     levels[u.id] = (levels[u.id] || 0) + 1; u.apply(S, P);
-    if (u.fusion) { RS.fusions.push(u.id); banner(`합성 완료! ${u.name}`); sfx.clear(); }
+    if (u.fusion) { RS.fusions.push(u.id); banner(t('합성 완료! {name}', { name: u.name })); sfx.clear(); }
     paused = false; choices = []; $('levelup').hidden = true; $('cross').hidden = false;
     if (freePicks > 0 && --freePicks > 0 && offer()) return;
     if (xp >= xpForLevel(level)) { xp -= xpForLevel(level); levelUp(); }
@@ -356,9 +383,9 @@ export function createGame(renderer, profile, onExit) {
   // 일시정지 화면의 현재 빌드: 가진 강화, 완성한 합성, 진행 중인 합성 조합
   function renderBuild() {
     const own = UPGRADES.filter(u => levels[u.id]).map(u => `<li><b>${u.name}</b> ${levels[u.id]}/${u.max}</li>`).join('');
-    const done = FUSIONS.filter(f => levels[f.id]).map(f => `<li class="fz"><b>${f.name}</b> 합성 완료</li>`).join('');
+    const done = FUSIONS.filter(f => levels[f.id]).map(f => `<li class="fz"><b>${f.name}</b> ${t('합성 완료')}</li>`).join('');
     const prog = FUSIONS.filter(f => !levels[f.id] && Object.keys(f.need).some(k => levels[k])).map(f => `<li class="rc">${f.name}: ${Object.entries(f.need).map(([k, v]) => `${nameOf(k)} ${Math.min(v, levels[k] || 0)}/${v}`).join(' · ')}</li>`).join('');
-    $('build').innerHTML = (done + own + prog) || '<li class="rc">아직 고른 강화가 없습니다.</li>';
+    $('build').innerHTML = (done + own + prog) || `<li class="rc">${t('아직 고른 강화가 없습니다.')}</li>`;
   }
 
   function finish(won) {
@@ -367,31 +394,31 @@ export function createGame(renderer, profile, onExit) {
     const better = recordRun(map.id, time, kills, won), best = loadProgress().best[map.id];
     // 업적과 칭호
     const gain = commit(won, !won), achEl = $('over-ach');
-    achEl.innerHTML = gain.newTitles.map(t => `<li class="tt">새 칭호 「${t.name}」</li>`).join('')
+    achEl.innerHTML = gain.newTitles.map(x => `<li class="tt">${t('새 칭호 「{name}」', { name: x.name })}</li>`).join('')
       + gain.newAch.slice(0, 8).map(a => `<li><span class="md t${a.tier}">${TIER[a.tier].name}</span>${a.name}</li>`).join('')
-      + (gain.newAch.length > 8 ? `<li class="more">외 ${gain.newAch.length - 8}개 업적 달성</li>` : '');
+      + (gain.newAch.length > 8 ? `<li class="more">${t('외 {n}개 업적 달성', { n: gain.newAch.length - 8 })}</li>` : '');
     const next = MAPS[mapIdx + 1];
-    $('over-title').textContent = won ? `${map.name} ${D.name} 클리어!` : '좀비에게 따라잡혔어요';
-    $('over-stats').textContent = `${profile.name} (${D.name}): ${fmtTime(time)} 생존 · 레벨 ${level} · 좀비 ${kills}마리 · 최고 ${maxCombo} 연속`;
-    $('over-best').textContent = (better ? '새 기록! ' : '') + `내 최고 기록: ${fmtTime(best.time)} · ${best.kills}마리`
-      + (won && next ? ` · 「${next.name}」이 열렸습니다` : '') + (won && mapIdx < 3 ? ' · 새 후반 장비가 레벨업 카드에 등장합니다' : '');
+    $('over-title').textContent = won ? t('{map} {diff} 클리어!', { map: map.name, diff: D.name }) : t('좀비에게 따라잡혔어요');
+    $('over-stats').textContent = t('{name} ({diff}): {time} 생존 · 레벨 {lv} · 좀비 {k}마리 · 최고 {c} 연속', { name: profile.name, diff: D.name, time: fmtTime(time), lv: level, k: kills, c: maxCombo });
+    $('over-best').textContent = (better ? t('새 기록!') + ' ' : '') + t('내 최고 기록: {time} · {n}마리', { time: fmtTime(best.time), n: best.kills })
+      + (won && next ? ' · ' + t('「{map}」이 열렸습니다', { map: next.name }) : '') + (won && mapIdx < 3 ? ' · ' + t('새 후반 장비가 레벨업 카드에 등장합니다') : '');
     $('next').hidden = !(won && next); $('endless').hidden = !won; $('retry').hidden = won;
-    $('over').hidden = false; ['help', 'cross', 'pause', 'skills', 'boss', 'combo', 'banner', 'buff'].forEach(id => { $(id).hidden = true; });
+    $('over').hidden = false; ['help', 'cross', 'pause', 'skills', 'boss', 'combo', 'banner', 'buff', 'touch', 'pause-btn'].forEach(id => { $(id).hidden = true; });
     if (won) sfx.clear(); else sfx.over();
     // 전체 랭킹에 올리고 결과를 보여준다
-    const rankEl = $('over-rank'), rankNote = $('over-rank-note'); rankEl.innerHTML = ''; rankNote.textContent = `${map.name} 전체 랭킹에 올리는 중…`;
-    submitRun({ map: map.id, diff: D.id, id: account.id, name: profile.name, title: titleName(), kills, time: Math.floor(time), level, animal: profile.animal, cleared: won }).then(r => {
-      if (!r) { rankNote.textContent = '랭킹 서버에 연결할 수 없어 이 기록은 이 기기에만 저장했습니다.'; return; }
-      rankNote.textContent = `${map.name} 전체 랭킹 ${r.rank}위 · 이번 판 ${r.score.toLocaleString()}점 (내 최고 ${r.best.toLocaleString()}점)`;
+    const rankEl = $('over-rank'), rankNote = $('over-rank-note'); rankEl.innerHTML = ''; rankNote.textContent = t('{map} 전체 랭킹에 올리는 중…', { map: map.name });
+    submitRun({ map: map.id, diff: D.id, id: account.id, name: profile.name, title: titleName(), titleId: titleId(), kills, time: Math.floor(time), level, animal: profile.animal, cleared: won }).then(r => {
+      if (!r) { rankNote.textContent = t('랭킹 서버에 연결할 수 없어 이 기록은 이 기기에만 저장했습니다.'); return; }
+      rankNote.textContent = t('{map} 전체 랭킹 {rank}위 · 이번 판 {score}점 (내 최고 {best}점)', { map: map.name, rank: r.rank, score: num(r.score), best: num(r.best) });
       const rk = awardRank(map.id, r.rank); // 순위로 얻는 칭호
-      if (rk.newTitles.length) achEl.insertAdjacentHTML('afterbegin', rk.newTitles.map(t => `<li class="tt">새 칭호 「${t.name}」</li>`).join(''));
+      if (rk.newTitles.length) achEl.insertAdjacentHTML('afterbegin', rk.newTitles.map(x => `<li class="tt">${t('새 칭호 「{name}」', { name: x.name })}</li>`).join(''));
       renderRank(rankEl, r.top, 5, profile.name);
     });
   }
   function goEndless() {
     over = false; endless = true; winPending = false; nextBossAt = time + BOSS_EVERY;
-    $('over').hidden = true; ['help', 'cross', 'skills'].forEach(id => { $(id).hidden = false; });
-    banner('무한 모드: 좀비가 더 단단해집니다'); lockNow(); onLock();
+    $('over').hidden = true; ['help', 'cross', 'skills'].forEach(id => { $(id).hidden = false; }); if (touchMode) touchUi();
+    banner(t('무한 모드: 좀비가 더 단단해집니다')); lockNow(); onLock();
   }
 
   // 조준 방향(fwd)과 카메라 위치(eye)
@@ -430,12 +457,12 @@ export function createGame(renderer, profile, onExit) {
     b.vx = dx / d * BULLET; b.vy = dy / d * BULLET; b.vz = dz / d * BULLET; b.life = 0.3; return true;
   }
 
-  function update(dt, t) {
-    if (!over && !paused && !menuOpen) step(dt, t);
+  function update(dt, now) {
+    if (!over && !paused && !menuOpen) step(dt, now);
     renderer.render(scene, cam);
   }
 
-  function step(dt, t) {
+  function step(dt, now) {
     time += dt; frame++;
     if (autoAim && zs.length) { // 개발용 자동 조준
       let q = zs[0], bd = 1e9; for (const o of zs) { const d = (o.x - P.x) ** 2 + (o.z - P.z) ** 2; if (d < bd) { bd = d; q = o; } }
@@ -576,6 +603,21 @@ export function createGame(renderer, profile, onExit) {
     if (S.regen) P.hp = Math.min(S.maxHp, P.hp + S.regen * dt);
     if (S.rushWave && P.sprinting && (waveTick += dt) > 0.35) { waveTick = 0; blast(P.x, P.y, P.z, 2.8, 4, 0xffe066); } // 카피바라 전차
 
+    // 터치 조준 보조: 쏘는 중 조준선 가까이(약 10도 안)의 좀비 쪽으로 시선을 조금씩 끌어 준다
+    if (touchMode && aimHelp && fireHeld && zs.length) {
+      const cp = Math.cos(P.pitch), fx = Math.cos(P.yaw) * cp, fy = Math.sin(P.pitch), fz = -Math.sin(P.yaw) * cp, ey = P.y + 2.42;
+      let bc = 0.985, tq = null;
+      for (const q of zs) {
+        const dx = q.x - P.x, dy = q.y + 0.7 * ZT[q.type].s - ey, dz = q.z - P.z, d = Math.hypot(dx, dy, dz);
+        if (d > 45 || d < 1.5) continue;
+        const c = (dx * fx + dy * fy + dz * fz) / d; if (c > bc) { bc = c; tq = [dx, dy, dz, d]; }
+      }
+      if (tq) {
+        const k = Math.min(1, dt * 5), dyaw = Math.atan2(-tq[2], tq[0]) - P.yaw;
+        P.yaw += Math.atan2(Math.sin(dyaw), Math.cos(dyaw)) * k;
+        P.pitch = Math.max(-1.2, Math.min(1.1, P.pitch + (Math.asin(tq[1] / tq[3]) - P.pitch) * k));
+      }
+    }
     aimVectors(); aimPoint();
     capy.updateMatrixWorld(true);
     const dmgBuff = buff && buff.id === 'double' ? 2 : 1;
@@ -703,14 +745,14 @@ export function createGame(renderer, profile, onExit) {
     if (want.e && decoyCd <= 0) {
       decoyCd = DECOY_CD; sfx.jump();
       const tt = fwd.y < -0.05 ? Math.min(20, -eye.y / fwd.y) : 14;
-      decoy = { x: clampA(eye.x + fwd.x * tt), z: clampA(eye.z + fwd.z * tt), t: 5 + S.decoyUp * 1.5 }; banner('미끼 귤!');
+      decoy = { x: clampA(eye.x + fwd.x * tt), z: clampA(eye.z + fwd.z * tt), t: 5 + S.decoyUp * 1.5 }; banner(t('미끼 귤!'));
     }
     if (decoy) {
       decoy.t -= dt; decoyM.visible = true; decoyM.position.set(decoy.x, 0.8 + Math.abs(Math.sin(time * 5)) * 0.3, decoy.z); decoyM.rotation.y = time * 2; decoyM.scale.setScalar(1 + (decoy.t < 1 ? Math.sin(time * 40) * 0.12 : 0));
       if (decoy.t <= 0) { blast(decoy.x, 0, decoy.z, 5 + S.decoyUp, (12 + 10 * S.decoyUp) * dmgBuff, 0xf7931e); sfx.boom(); shake = Math.max(shake, 0.25); decoy = null; decoyM.visible = false; }
     }
     // ── R 궁극기 귤 폭격: 처치로 충전, 조준한 지점 일대에 폭발을 쏟아붓는다 ──
-    if (want.r && ult >= ULT_KILLS && barrage <= 0) { ult = 0; barrage = BARRAGE_TIME; sfx.ult(); banner('미사일 난사!'); pods.forEach(g => { g.visible = true; }); }
+    if (want.r && ult >= ULT_KILLS && barrage <= 0) { ult = 0; barrage = BARRAGE_TIME; sfx.ult(); banner(t('미사일 난사!')); pods.forEach(g => { g.visible = true; }); }
     if (barrage > 0) {
       barrage -= dt; barrageAcc += dt; shake = Math.max(shake, 0.08);
       pods.forEach(g => { g.scale.setScalar(Math.min(1, g.scale.x + dt * 6)); g.rotation.z = P.pitch * 0.8; });
@@ -727,10 +769,10 @@ export function createGame(renderer, profile, onExit) {
     // ── B: B2 귤 폭격 (호출기를 주워야 쓸 수 있다) ──
     for (let i = b2Items.length - 1; i >= 0; i--) {
       const g = b2Items[i]; g.rotation.y += dt * 1.2; g.position.y = Math.sin(time * 2 + i) * 0.15;
-      if ((P.x - g.position.x) ** 2 + (P.z - g.position.z) ** 2 < 3 && P.y < 3 && b2 < 3) { b2++; scene.remove(g); b2Items.splice(i, 1); sfx.level(); banner('B2 폭격 호출기! B 키로 부르세요'); }
+      if ((P.x - g.position.x) ** 2 + (P.z - g.position.z) ** 2 < 3 && P.y < 3 && b2 < 3) { b2++; scene.remove(g); b2Items.splice(i, 1); sfx.level(); banner(touchMode ? t('B2 폭격 호출기! B2 버튼으로 부르세요') : t('B2 폭격 호출기! B 키로 부르세요')); }
     }
     if (want.b && b2 > 0 && !raid) {
-      b2--; sfx.ult(); sfx.boss(); banner('B2 귤 폭격!');
+      b2--; sfx.ult(); sfx.boss(); banner(t('B2 귤 폭격!'));
       // 바라보는 방향으로, 조준한 지점을 가운데에 두고 60m 길이로 융단 폭격한다
       const tt = fwd.y < -0.05 ? Math.min(34, -eye.y / fwd.y) : 22, hl = Math.hypot(fwd.x, fwd.z) || 1, dx = fwd.x / hl, dz = fwd.z / hl;
       raid = { cx: eye.x + fwd.x * tt, cz: eye.z + fwd.z * tt, dx, dz, s: -95, drop: 0 };
@@ -764,7 +806,7 @@ export function createGame(renderer, profile, onExit) {
       for (let k = 0; k < 10; k++) {
         const a = Math.random() * PI * 2, d = 14 + Math.random() * 12, x = clampA(P.x + Math.cos(a) * d), z = clampA(P.z + Math.sin(a) * d);
         if (plats.some(b => x > b.x0 - 1 && x < b.x1 + 1 && z > b.z0 - 1 && z < b.z1 + 1)) continue;
-        crateOn = true; crateLife = 30; crate.visible = true; crate.position.set(x, 0.8, z); banner('보급 상자 투하!'); sfx.combo(); break;
+        crateOn = true; crateLife = 30; crate.visible = true; crate.position.set(x, 0.8, z); banner(t('보급 상자 투하!')); sfx.combo(); break;
       }
       crateT = CRATE_EVERY;
     }
@@ -772,7 +814,7 @@ export function createGame(renderer, profile, onExit) {
       crateLife -= dt; crate.rotation.y += dt; crate.position.y = 0.8 + Math.sin(time * 3) * 0.15;
       if ((P.x - crate.position.x) ** 2 + (P.z - crate.position.z) ** 2 < 3.2 && P.y < 3) {
         RS.crates++; crateOn = false; crate.visible = false; sfx.level();
-        if (Math.random() < 0.22 && b2 < 3) { b2++; banner('B2 폭격 호출기! B 키로 부르세요'); }
+        if (Math.random() < 0.22 && b2 < 3) { b2++; banner(touchMode ? t('B2 폭격 호출기! B2 버튼으로 부르세요') : t('B2 폭격 호출기! B 키로 부르세요')); }
         else { buff = BUFFS[Math.floor(Math.random() * BUFFS.length)]; buffT = BUFF_TIME; banner(buff.name + '!'); if (buff.id === 'feast') magnetT = BUFF_TIME; }
       } else if (crateLife <= 0) { crateOn = false; crate.visible = false; }
     }
@@ -790,7 +832,7 @@ export function createGame(renderer, profile, onExit) {
     for (let i = potions.length - 1; i >= 0; i--) {
       const m = potions[i]; m.rotation.y += dt * 1.5; m.position.y = 0.15 + Math.sin(time * 2.5 + i) * 0.12;
       if (P.hp < S.maxHp && (P.x - m.position.x) ** 2 + (P.z - m.position.z) ** 2 < 2.6 && P.y < 2.5) {
-        RS.potions++; P.hp = Math.min(S.maxHp, P.hp + S.maxHp * 0.35); sfx.heart(); banner('체력 물약!'); burst(m.position.x, 1, m.position.z, new T.Color(0xff8fa3), 10, 5);
+        RS.potions++; P.hp = Math.min(S.maxHp, P.hp + S.maxHp * 0.35); sfx.heart(); banner(t('체력 물약!')); burst(m.position.x, 1, m.position.z, new T.Color(0xff8fa3), 10, 5);
         scene.remove(m); potions.splice(i, 1);
       }
     }
@@ -855,13 +897,13 @@ export function createGame(renderer, profile, onExit) {
     pMesh.count = parts.length; pMesh.instanceMatrix.needsUpdate = true; if (pMesh.instanceColor) pMesh.instanceColor.needsUpdate = true;
     dummy.rotation.set(0, 0, 0);
 
-    animateCapy(capy, t * (P.sprinting ? 1.6 : 1), moving && P.grounded, firing);
+    animateCapy(capy, now * (P.sprinting ? 1.6 : 1), moving && P.grounded, firing);
     world.anims.forEach(a => { a.m.rotation[a.axis] += a.speed * dt; });
     world.far.rotation.y += dt * 0.002;
 
     // ── 카메라: 라이더 눈높이(1인칭) 또는 어깨 뒤(3인칭). 돌진하면 시야가 넓어진다 ──
     shake = Math.max(0, shake - dt);
-    const bob = firstPerson && moving && P.grounded ? Math.sin(t * (P.sprinting ? 19 : 12)) * (P.sprinting ? 0.05 : 0.025) : 0;
+    const bob = firstPerson && moving && P.grounded ? Math.sin(now * (P.sprinting ? 19 : 12)) * (P.sprinting ? 0.05 : 0.025) : 0;
     cam.position.set(eye.x + (Math.random() - 0.5) * shake, eye.y + bob + (Math.random() - 0.5) * shake, eye.z + (Math.random() - 0.5) * shake);
     v.copy(cam.position).add(fwd); cam.lookAt(v);
     const fov = (W < H ? 90 : 75) + (P.sprinting ? 9 : 0);
@@ -887,12 +929,12 @@ export function createGame(renderer, profile, onExit) {
     $('kills').textContent = kills;
     $('time').textContent = fmtTime(time);
     const slot = (id, wait) => { const el = $(id); el.style.setProperty('--wait', Math.max(0, Math.min(1, wait)) * 100 + '%'); el.classList.toggle('ready', wait <= 0); };
-    slot('sk-b', b2 > 0 ? 0 : 1); $('sk-b-n').textContent = 'B2 폭격 ×' + b2;
+    slot('sk-b', b2 > 0 ? 0 : 1); $('sk-b-n').textContent = t('B2 폭격') + ' ×' + b2;
     slot('sk-m2', rocketCd / S.rocketCd); slot('sk-q', stompCd / S.stompCd); slot('sk-e', decoyCd / DECOY_CD); slot('sk-r', 1 - ult / ULT_KILLS);
-    $('wave').textContent = boss ? '보스전!' : endless ? `무한 모드 · 다음 보스 ${fmtTime(Math.max(0, nextBossAt - time))}` : `웨이브 ${Math.min(BOSSES_TO_CLEAR, bossKills + 1)}/${BOSSES_TO_CLEAR} · 보스까지 ${fmtTime(Math.max(0, nextBossAt - time))}`;
+    $('wave').textContent = boss ? t('보스전!') : endless ? t('무한 모드 · 다음 보스 {time}', { time: fmtTime(Math.max(0, nextBossAt - time)) }) : t('웨이브 {a}/{b} · 보스까지 {time}', { a: Math.min(BOSSES_TO_CLEAR, bossKills + 1), b: BOSSES_TO_CLEAR, time: fmtTime(Math.max(0, nextBossAt - time)) });
     if (boss) $('boss-fill').style.width = Math.max(0, boss.hp) / boss.maxHp * 100 + '%';
-    const cEl = $('combo'); cEl.hidden = combo < 5; if (combo >= 5) { cEl.textContent = combo + ' 연속'; cEl.style.opacity = Math.min(1, comboT / 1.2); }
-    const bEl = $('buff'); bEl.hidden = !buff && !bathing; if (buff) bEl.textContent = `${buff.name} ${Math.ceil(buffT)}초`; else if (bathing) bEl.textContent = '온천욕 중: 체력 회복';
+    const cEl = $('combo'); cEl.hidden = combo < 5; if (combo >= 5) { cEl.textContent = t('{n} 연속', { n: combo }); cEl.style.opacity = Math.min(1, comboT / 1.2); }
+    const bEl = $('buff'); bEl.hidden = !buff && !bathing; if (buff) bEl.textContent = t('{name} {n}초', { name: buff.name, n: Math.ceil(buffT) }); else if (bathing) bEl.textContent = t('온천욕 중: 체력 회복');
     if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) $('banner').hidden = true; }
     if (!firstPerson) {
       v.set(P.x, P.y + 2.9, P.z).project(cam);
@@ -920,6 +962,7 @@ export function createGame(renderer, profile, onExit) {
     canvas.removeEventListener('pointerdown', md); window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', mu); window.removeEventListener('pointercancel', mu);
     canvas.removeEventListener('contextmenu', noMenu); canvas.removeEventListener('mousedown', mdn); window.removeEventListener('mouseup', mup);
     handlers.forEach(([id, fn]) => $(id).removeEventListener('click', fn));
+    Object.keys(ACTS).forEach(id => { const el = $(id); el.removeEventListener('pointerdown', tDown); TUPS.forEach(n => el.removeEventListener(n, tUp)); el.classList.remove('down'); });
     if (document.pointerLockElement === canvas) document.exitPointerLock();
     if (!over && time - cBase.time > 1) commit(false, false); // 도중에 나가도 그때까지의 기록은 업적에 반영한다
     ALL.forEach(id => { $(id).hidden = true; });
@@ -934,5 +977,14 @@ export function createGame(renderer, profile, onExit) {
     autoAim = false; fireHeld = rocketHeld = false;
     return { level, levels, kills, hp: Math.round(P.hp), time: Math.round(time), bossKills, maxCombo, over };
   }
-  return { update, resize, dispose, sim, grant: n => { xp += n; }, peek: () => { touchMode = true; setMenu(false); } };
+  // 안드로이드 뒤로 가기: 메뉴를 열고 닫는다. 결과 화면이면 캐릭터 선택으로.
+  function back() {
+    if (paused) return true;
+    if (over) { onExit('select'); return true; }
+    if (menuOpen) { if (touchMode) setMenu(false); else lockNow(); return true; }
+    setMenu(true); return true;
+  }
+  // 앱이 백그라운드로 가거나 탭이 가려지면 일시정지
+  function suspend() { if (!over && !paused && !menuOpen) { fireHeld = rocketHeld = false; setMenu(true); } }
+  return { update, resize, dispose, sim, back, suspend, grant: n => { xp += n; }, peek: () => { touchMode = true; setMenu(false); touchUi(); } };
 }

@@ -1,15 +1,23 @@
 import * as T from 'three';
+import '@fontsource/jua/400.css';
+import '@fontsource/ibm-plex-sans-kr/400.css';
+import '@fontsource/ibm-plex-sans-kr/500.css';
+import '@fontsource/ibm-plex-sans-kr/600.css';
 import './style.css';
 import { createSelect } from './select.js';
 import { createGame } from './game.js';
 import { MAPS } from './maps.js';
 import { saveProfile, loadProfile } from './save.js';
+import { translateDom } from './i18n.js';
+import { makeRenderer, getQuality } from './quality.js';
+import { setShadowSize } from './kit.js';
+import { setupNative } from './native.js';
+
+translateDom();
 
 const canvas = document.getElementById('c');
-const renderer = new T.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = T.PCFSoftShadowMap;
+const renderer = makeRenderer({ canvas });
+setShadowSize(getQuality().shadowSize);
 
 let mode = null, size = [0, 0], lastProfile = null;
 // 이전 화면을 먼저 정리한 뒤 새 화면을 만든다.
@@ -43,6 +51,10 @@ const mapParam = new URLSearchParams(location.search).get('map');
 if (mapParam && MAPS.some(m => m.id === mapParam)) saveProfile({ ...loadProfile(), map: mapParam });
 const diffParam = new URLSearchParams(location.search).get('diff');
 if (diffParam) saveProfile({ ...loadProfile(), diff: diffParam });
+setupNative({
+  back: () => !!(mode && mode.back && mode.back()),
+  suspend: () => { if (mode && mode.suspend) mode.suspend(); },
+});
 toSelect();
 requestAnimationFrame(loop);
 
@@ -50,10 +62,11 @@ requestAnimationFrame(loop);
 // #sim 뒤에 초를 붙일 수 있다(#sim90). #retry는 재시작 뒤에도 UI가 남는지 확인한다.
 const hash = location.hash.slice(1);
 if (hash === 'ach') document.getElementById('ach-open').click(); // 개발용: 업적 화면 바로 열기
-if (/^(play|sim|retry|die)/.test(hash)) {
+if (/^(play|sim|retry|die|lvup)/.test(hash)) {
   const n = document.getElementById('name'); if (!n.value) { n.value = '테스트'; n.dispatchEvent(new Event('input')); }
   document.getElementById('go').click();
 }
+if (hash === 'lvup') mode.grant(30); // 개발용: 레벨업 카드 화면 확인
 if (/^(sim|retry|die)/.test(hash)) {
   try {
     const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code }));

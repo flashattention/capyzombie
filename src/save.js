@@ -1,4 +1,5 @@
 import { RIDERS, ACCESSORIES } from './models/riders.js';
+import { t } from './i18n.js';
 
 // 저장 규칙 (업데이트해도 유저 진행이 초기화되지 않게 지킨다)
 //  1. localStorage 키 이름(capyzombie.profile / .progress / .account)은 바꾸지 않는다.
@@ -7,7 +8,7 @@ import { RIDERS, ACCESSORIES } from './models/riders.js';
 const SAVE_VERSION = 2;
 const read = key => { try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } };
 const KEY = 'capyzombie.profile';
-export const NAMES = ['꽥꽥이', '귤대장', '진흙왕', '콩떡', '물만두', '감자', '초코', '두부', '호두', '보리', '온천이', '낮잠왕'];
+export const NAMES = [t('꽥꽥이'), t('귤대장'), t('진흙왕'), t('콩떡'), t('물만두'), t('감자'), t('초코'), t('두부'), t('호두'), t('보리'), t('온천이'), t('낮잠왕')];
 export const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
 
 export function defaultProfile(animal = 'duck') {

@@ -1,0 +1,8 @@
+{
+  "appId": "com.jellybeardreams.capyzombie",
+  "appName": "CapyZombie",
+  "webDir": "dist-app",
+  "android": {
+    "backgroundColor": "#cfe8dc"
+  }
+}

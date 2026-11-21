@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CapyZombie</string>
+    <string name="title_activity_main">CapyZombie</string>
+    <string name="package_name">com.jellybeardreams.capyzombie</string>
+    <string name="custom_url_scheme">com.jellybeardreams.capyzombie</string>
+</resources>

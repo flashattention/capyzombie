@@ -2,6 +2,7 @@
 // 좀비 순서는 고정: 기본 / 러너 / 탱커 / 폭탄 / 원거리 / 도약
 import * as T from 'three';
 import { add, ell, box, cyl, cone } from './kit.js';
+import { t } from './i18n.js';
 
 const PI = Math.PI;
 const ROLE = {
@@ -23,14 +24,14 @@ Object.assign(ROLE, {
 const z = (name, role, look) => ({ name, ...ROLE[role], ...look });
 // 전장의 기본 좀비 모습에 역할 장식을 얹어 만드는 6종. 손으로 만든 6종과 합쳐 전장마다 12종이 된다.
 const EXTRA = [
-  ['방패병', 'shield', { shirt: 0x8a949c }], ['주술사', 'healer', { shirt: 0xf1f3f5, pants: 0x5ab06a }], ['분열체', 'splitter', {}],
-  ['돌격병', 'charger', { shirt: 0x9c2b2b }], ['떼거리', 'mini', {}], ['맹독 좀비', 'toxic', { skin: 0x9adf5a, shirt: 0x6a3fa0 }],
+  [t('방패병'), 'shield', { shirt: 0x8a949c }], [t('주술사'), 'healer', { shirt: 0xf1f3f5, pants: 0x5ab06a }], [t('분열체'), 'splitter', {}],
+  [t('돌격병'), 'charger', { shirt: 0x9c2b2b }], [t('떼거리'), 'mini', {}], [t('맹독 좀비'), 'toxic', { skin: 0x9adf5a, shirt: 0x6a3fa0 }],
 ];
 // 순서 고정: 0 기본, 1 러너, 2 탱커, 3 폭탄, 4 원거리, 5 도약, 6 방패, 7 치유, 8 분열, 9 돌격, 10 떼, 11 맹독
 export function mapMobs(map) {
   if (!map._mobs) {
     const b = map.zombies[0];
-    map._mobs = [...map.zombies, ...EXTRA.map(([n, role, look]) => z(`${map.tag} ${n}`, role, { skin: b.skin, shirt: b.shirt, pants: b.pants, acc: b.acc, capCol: b.capCol, ...look }))];
+    map._mobs = [...map.zombies, ...EXTRA.map(([n, role, look]) => z(t('{tag} {name}', { tag: map.tag, name: n }), role, { skin: b.skin, shirt: b.shirt, pants: b.pants, acc: b.acc, capCol: b.capCol, ...look }))];
   }
   return map._mobs;
 }
@@ -77,20 +78,20 @@ const jackLantern = (g, x, zz) => { add(g, ell(0.3, 0.26, 0.3, 0xe8862e), x, 0.2
 const graveLamp = (g, x, zz) => { add(g, cyl(0.05, 2.2, 0x23252f), x, 1.1, zz); add(g, box(0.3, 0.4, 0.3, 0xb6f09c, F), x, 2.3, zz); add(g, cone(0.26, 0.2, 0x23252f), x, 2.6, zz); };
 
 export const MAPS = [
-  { id: 'farm', name: '유자 농장', blurb: '귤나무와 헛간, 풍차 사이로 농부들이 일어납니다.',
+  { id: 'farm', name: t('유자 농장'), blurb: t('귤나무와 헛간, 풍차 사이로 농부들이 일어납니다.'),
     ground: 0x8fbf5a, tones: [0x7fae4c, 0x9cc866], soil: 0x7a5a3c, sky: 0xcfe8dc, skyTop: 0x7ec3e6, bg: ['#bfe3e0', '#f6e9c9'],
     light: { sky: 0xfff4dc, ground: 0x8a7a5a, hemi: 2.4, sun: 3.0, sunColor: 0xfff2d8, fog: [50, 160] },
     air: { colors: [0xffffff, 0xffc9d9, 0xc9e88a], n: 140, fall: 0.8, drift: 0.9, size: 0.07 },
     hill: { side: [0x7a5a3c, 0x8a6a45], top: 0x7fb04e }, pad: [0xe2b64f, 0xc95f4a], wall: 0x9a7447, far: { kind: 'cone', colors: [0x6fa64a, 0x5f9e3f, 0x86b85a], h: [10, 28], w: [18, 40] },
     props: [[0.38, tuft(0x5f9e3f)], [0.08, hay], [0.2, tree], [0.1, rock(0x9a8f80)], [0.09, flower(0xffe066)], [0.09, flower(0xff8fab)], [0.03, scarecrow], [0.03, flower(0xffffff)]],
-    tag: '농장', bosses: bosses('호박 대왕', ['summon', 'volley'], '허수아비 포수', '메뚜기 여왕'),
+    tag: t('농장'), bosses: bosses(t('호박 대왕'), ['summon', 'volley'], t('허수아비 포수'), t('메뚜기 여왕')),
     zombies: [
-      z('농부 좀비', 'basic', { skin: 0x8fb86a, shirt: 0xc95f4a, pants: 0x4f6a8f, acc: 'straw' }),
-      z('꼬마 좀비', 'runner', { skin: 0xa9cf7a, shirt: 0xf2c14e, pants: 0x7a5a3c, brain: 1 }),
-      z('호박머리', 'tank', { skin: 0x8fb86a, headCol: 0xe8862e, shirt: 0x6b5a45, pants: 0x4a3d30, acc: 'pumpkin' }),
-      z('농약통 좀비', 'bomber', { skin: 0xb8c26a, shirt: 0x5d7a3a, pants: 0x4a3d30 }),
-      z('침 뱉는 허수아비', 'spitter', { skin: 0xe2c98a, shirt: 0x7a5a3c, pants: 0x4f6a8f, acc: 'straw' }),
-      z('메뚜기 좀비', 'leaper', { skin: 0x9bd35a, shirt: 0x6aa84f, pants: 0x4f8a3c, acc: 'antenna' }),
+      z(t('농부 좀비'), 'basic', { skin: 0x8fb86a, shirt: 0xc95f4a, pants: 0x4f6a8f, acc: 'straw' }),
+      z(t('꼬마 좀비'), 'runner', { skin: 0xa9cf7a, shirt: 0xf2c14e, pants: 0x7a5a3c, brain: 1 }),
+      z(t('호박머리'), 'tank', { skin: 0x8fb86a, headCol: 0xe8862e, shirt: 0x6b5a45, pants: 0x4a3d30, acc: 'pumpkin' }),
+      z(t('농약통 좀비'), 'bomber', { skin: 0xb8c26a, shirt: 0x5d7a3a, pants: 0x4a3d30 }),
+      z(t('침 뱉는 허수아비'), 'spitter', { skin: 0xe2c98a, shirt: 0x7a5a3c, pants: 0x4f6a8f, acc: 'straw' }),
+      z(t('메뚜기 좀비'), 'leaper', { skin: 0x9bd35a, shirt: 0x6aa84f, pants: 0x4f8a3c, acc: 'antenna' }),
     ],
     build({ g, A, solid, spots, spinner }) {
       spots(5, 14, (x, zz) => { // 헛간과 사일로
@@ -126,20 +127,20 @@ export const MAPS = [
         [0.72, 0.4].forEach(h => add(g, rot ? box(0.08, 0.1, 8.2, 0x9a7447) : box(8.2, 0.1, 0.08, 0x9a7447), x, h, zz));
       });
     } },
-  { id: 'city', name: '네온 도심', blurb: '퇴근하지 못한 회사원들이 빌딩 숲 사이 차선을 넘어옵니다.',
+  { id: 'city', name: t('네온 도심'), blurb: t('퇴근하지 못한 회사원들이 빌딩 숲 사이 차선을 넘어옵니다.'),
     ground: 0x5a5e78, tones: [0x51556e, 0x636782], soil: 0x3a3c55, sky: 0xf2b8c0, skyTop: 0x3a3470, bg: ['#34306b', '#ff9aa2'],
     light: { sky: 0xffc9d6, ground: 0x4a4770, hemi: 2.0, sun: 2.6, sunColor: 0xffb48a, fog: [45, 150] },
     air: { colors: [0xff8fd0, 0x7df9ff, 0xffe066], n: 110, fall: -0.25, drift: 0.3, size: 0.06, glow: true },
     hill: { side: [0xd9523a, 0x3b5bdb, 0xff922b, 0x20c997], top: 0x2f3348 }, pad: [0x495057, 0x7df9ff], wall: 0x2e3048, far: { kind: 'box', colors: [0x4a4770, 0x5a5488, 0x3d3a66], h: [22, 75], w: [10, 22] },
     props: [[0.2, trafficCone], [0.14, lamp], [0.12, mailbox], [0.14, hydrant], [0.16, trash], [0.1, rock(0x777b93)], [0.08, bench], [0.06, vending]],
-    tag: '도심', bosses: bosses('현장 소장', ['slam', 'mortar'], '바리스타 저격수', '파쿠르 두목'),
+    tag: t('도심'), bosses: bosses(t('현장 소장'), ['slam', 'mortar'], t('바리스타 저격수'), t('파쿠르 두목')),
     zombies: [
-      z('회사원 좀비', 'basic', { skin: 0x7ee081, shirt: 0xf1f3f5, pants: 0x364fc7, acc: 'tie', brain: 1 }),
-      z('배달 러너', 'runner', { skin: 0x9af09c, shirt: 0x20c997, pants: 0x343a40, acc: 'cap', capCol: 0xff4d4d }),
-      z('공사장 반장', 'tank', { skin: 0x69c96c, shirt: 0xff922b, pants: 0x495057, acc: 'hardhat' }),
-      z('가스통 좀비', 'bomber', { skin: 0x8fe0a0, shirt: 0x868e96, pants: 0x343a40 }),
-      z('커피 뿜는 좀비', 'spitter', { skin: 0x86d98a, shirt: 0x7a4a26, pants: 0x212529, acc: 'cap', capCol: 0x3f6b5c }),
-      z('파쿠르 좀비', 'leaper', { skin: 0x9af09c, shirt: 0x212529, pants: 0xe03131, acc: 'headband' }),
+      z(t('회사원 좀비'), 'basic', { skin: 0x7ee081, shirt: 0xf1f3f5, pants: 0x364fc7, acc: 'tie', brain: 1 }),
+      z(t('배달 러너'), 'runner', { skin: 0x9af09c, shirt: 0x20c997, pants: 0x343a40, acc: 'cap', capCol: 0xff4d4d }),
+      z(t('공사장 반장'), 'tank', { skin: 0x69c96c, shirt: 0xff922b, pants: 0x495057, acc: 'hardhat' }),
+      z(t('가스통 좀비'), 'bomber', { skin: 0x8fe0a0, shirt: 0x868e96, pants: 0x343a40 }),
+      z(t('커피 뿜는 좀비'), 'spitter', { skin: 0x86d98a, shirt: 0x7a4a26, pants: 0x212529, acc: 'cap', capCol: 0x3f6b5c }),
+      z(t('파쿠르 좀비'), 'leaper', { skin: 0x9af09c, shirt: 0x212529, pants: 0xe03131, acc: 'headband' }),
     ],
     build({ g, A, solid, spots, avoid }) {
       const roads = [-A * 0.6, -A * 0.2, A * 0.2, A * 0.6]; // 도로망
@@ -189,20 +190,20 @@ export const MAPS = [
         solid(x, zz, 0.8, 0.8, 7, 0x2a2f3a); add(g, box(6, 3, 0.3, pick(neon), F), x, 8, zz); add(g, box(6.4, 3.4, 0.2, 0x2a2f3a), x, 8, zz - 0.1);
       });
     } },
-  { id: 'desert', name: '사막 유적', blurb: '계단식 피라미드와 무너진 기둥 아래에서 붕대 감은 것들이 깨어납니다.',
+  { id: 'desert', name: t('사막 유적'), blurb: t('계단식 피라미드와 무너진 기둥 아래에서 붕대 감은 것들이 깨어납니다.'),
     ground: 0xe3c27a, tones: [0xd6b268, 0xedd08c], soil: 0xb8904f, sky: 0xf6e3b4, skyTop: 0x5fb6f0, bg: ['#8fd0ff', '#ffe9a8'],
     light: { sky: 0xfff6dc, ground: 0xc9a06a, hemi: 2.5, sun: 3.5, sunColor: 0xfff0c8, fog: [55, 170] },
     air: { colors: [0xf2dca0, 0xe3c27a], n: 150, fall: 0.15, drift: 3.2, size: 0.05 },
     hill: { side: [0xc98a4b, 0xb8904f], top: 0xdba15e }, pad: [0xb8904f, 0x4fc3d9], wall: 0xc9ae76, far: { kind: 'cone', colors: [0xdfb96e, 0xd1a55c, 0xc98a4b], h: [8, 22], w: [24, 55] },
     props: [[0.3, rock(0xb8904f)], [0.2, cactus], [0.14, pillar], [0.18, tuft(0xb9a25a)], [0.1, bones], [0.08, pot]],
-    tag: '사막', bosses: bosses('선인장 군주', ['volley', 'snipe'], '코브라 파라오', '전갈 왕'),
+    tag: t('사막'), bosses: bosses(t('선인장 군주'), ['volley', 'snipe'], t('코브라 파라오'), t('전갈 왕')),
     zombies: [
-      z('미라 좀비', 'basic', { skin: 0xd9cfb0, shirt: 0xd9cfb0, pants: 0xc4b998, acc: 'bandage' }),
-      z('카우보이 좀비', 'runner', { skin: 0x86b86b, shirt: 0x9c4f2e, pants: 0x3d5a80, acc: 'cowboy' }),
-      z('선인장 좀비', 'tank', { skin: 0x4f9d57, shirt: 0x4f9d57, pants: 0x3d7d45, acc: 'cactus' }),
-      z('다이너마이트 좀비', 'bomber', { skin: 0xa8c080, shirt: 0x7a4a26, pants: 0x3d5a80 }),
-      z('코브라 좀비', 'spitter', { skin: 0x9bbf4a, shirt: 0x6b8a2e, pants: 0x4f6a2a, acc: 'hood', hoodCol: 0x6b8a2e }),
-      z('전갈 좀비', 'leaper', { skin: 0xc98a4b, shirt: 0x8a552b, pants: 0x6b4a2f, acc: 'antenna' }),
+      z(t('미라 좀비'), 'basic', { skin: 0xd9cfb0, shirt: 0xd9cfb0, pants: 0xc4b998, acc: 'bandage' }),
+      z(t('카우보이 좀비'), 'runner', { skin: 0x86b86b, shirt: 0x9c4f2e, pants: 0x3d5a80, acc: 'cowboy' }),
+      z(t('선인장 좀비'), 'tank', { skin: 0x4f9d57, shirt: 0x4f9d57, pants: 0x3d7d45, acc: 'cactus' }),
+      z(t('다이너마이트 좀비'), 'bomber', { skin: 0xa8c080, shirt: 0x7a4a26, pants: 0x3d5a80 }),
+      z(t('코브라 좀비'), 'spitter', { skin: 0x9bbf4a, shirt: 0x6b8a2e, pants: 0x4f6a2a, acc: 'hood', hoodCol: 0x6b8a2e }),
+      z(t('전갈 좀비'), 'leaper', { skin: 0xc98a4b, shirt: 0x8a552b, pants: 0x6b4a2f, acc: 'antenna' }),
     ],
     build({ g, A, solid, spots }) {
       spots(5, 17, (x, zz) => { // 계단식 피라미드: 한 단씩 점프해 꼭대기까지 오른다
@@ -236,20 +237,20 @@ export const MAPS = [
       spots(8, 4, (x, zz) => { solid(x, zz, 1.2, 1.2, 8, 0xd9c08a); add(g, cone(0.9, 1.4, 0xf2c14e), x, 8.7, zz); }); // 오벨리스크
       spots(10, 6, (x, zz) => { for (let i = 0; i < 5; i++) { const h = i === 2 ? 1.2 : rnd(2.5, 5.5); add(g, cyl(0.45, h, 0xd9c08a), x + i * 2.4 - 4.8, h / 2, zz); add(g, box(1.2, 0.3, 1.2, 0xc9ae76), x + i * 2.4 - 4.8, h + 0.15, zz); } });
     } },
-  { id: 'candy', name: '캔디 놀이공원', blurb: '케이크 탑과 대관람차 사이로 사탕 색 좀비들이 풍선껌을 불며 다가옵니다.',
+  { id: 'candy', name: t('캔디 놀이공원'), blurb: t('케이크 탑과 대관람차 사이로 사탕 색 좀비들이 풍선껌을 불며 다가옵니다.'),
     ground: 0xffbfd0, tones: [0xffb0c6, 0xffd0dc], soil: 0xe08aa6, sky: 0xffe3ec, skyTop: 0x9fd8ff, bg: ['#ffe3ec', '#cdeaff'],
     light: { sky: 0xffffff, ground: 0xffc9d9, hemi: 2.6, sun: 2.6, sunColor: 0xfff0f5, fog: [55, 170] },
     air: { colors: [0xff8fab, 0xffe066, 0x8ecae6, 0x9be3c9, 0xc9b6f2], n: 170, fall: 1.0, drift: 0.6, size: 0.08 },
     hill: { side: [0xf7b2c4, 0xc98a6b, 0x9be3c9, 0xffe066], top: 0xfff1d6 }, pad: [0x9be3c9, 0xff8fab], wall: 0xffffff, far: { kind: 'cone', colors: [0xffc9d9, 0xc9b6f2, 0x9be3c9, 0xffe9a8], h: [12, 34], w: [14, 34] },
     props: [[0.18, gumdrop(0xc9b6f2)], [0.14, gumdrop(0x9be3c9)], [0.14, gumdrop(0xffe066)], [0.14, lollipop(0xff8fab)], [0.14, lollipop(0x8ecae6)], [0.14, cupcake], [0.12, donut]],
-    tag: '캔디', bosses: bosses('풍선껌 여왕', ['bombs', 'spiral'], '솜사탕 마법사', '젤리 대마왕'),
+    tag: t('캔디'), bosses: bosses(t('풍선껌 여왕'), ['bombs', 'spiral'], t('솜사탕 마법사'), t('젤리 대마왕')),
     zombies: [
-      z('파티모자 좀비', 'basic', { skin: 0xa8e6cf, shirt: 0xffe066, pants: 0x8ecae6, acc: 'party' }),
-      z('토끼 머리띠', 'runner', { skin: 0xb8f0dc, shirt: 0xffffff, pants: 0xffb3c6, acc: 'bunny' }),
-      z('풍선껌 뚱보', 'tank', { skin: 0xc9b6f2, shirt: 0xff8fab, pants: 0x9d8ad6, acc: 'gum', fat: 1.35 }),
-      z('팝핑캔디 좀비', 'bomber', { skin: 0xffd6a5, shirt: 0xff8fab, pants: 0x8ecae6 }),
-      z('솜사탕 좀비', 'spitter', { skin: 0xbfe8ff, shirt: 0xffffff, pants: 0xffb3c6, acc: 'puff', puffCol: 0xff9ac2 }),
-      z('젤리 좀비', 'leaper', { skin: 0x7fe0b0, shirt: 0x5ad19a, pants: 0x3fb983, acc: 'antenna' }),
+      z(t('파티모자 좀비'), 'basic', { skin: 0xa8e6cf, shirt: 0xffe066, pants: 0x8ecae6, acc: 'party' }),
+      z(t('토끼 머리띠'), 'runner', { skin: 0xb8f0dc, shirt: 0xffffff, pants: 0xffb3c6, acc: 'bunny' }),
+      z(t('풍선껌 뚱보'), 'tank', { skin: 0xc9b6f2, shirt: 0xff8fab, pants: 0x9d8ad6, acc: 'gum', fat: 1.35 }),
+      z(t('팝핑캔디 좀비'), 'bomber', { skin: 0xffd6a5, shirt: 0xff8fab, pants: 0x8ecae6 }),
+      z(t('솜사탕 좀비'), 'spitter', { skin: 0xbfe8ff, shirt: 0xffffff, pants: 0xffb3c6, acc: 'puff', puffCol: 0xff9ac2 }),
+      z(t('젤리 좀비'), 'leaper', { skin: 0x7fe0b0, shirt: 0x5ad19a, pants: 0x3fb983, acc: 'antenna' }),
     ],
     build({ g, A, solid, spots, avoid, spinner }) {
       const river = -A * 0.35; // 초콜릿 강과 비스킷 다리
@@ -298,20 +299,20 @@ export const MAPS = [
         [-4, 4].forEach(o => solid(x + o, zz, 1.4, 1.2, 1.2, 0xd9a05b));
       });
     } },
-  { id: 'onsen', name: '눈꽃 온천', blurb: '김 오르는 탕에 몸을 담그면 체력이 돌아옵니다. 눈사람들이 그걸 가만두지 않지만요.',
+  { id: 'onsen', name: t('눈꽃 온천'), blurb: t('김 오르는 탕에 몸을 담그면 체력이 돌아옵니다. 눈사람들이 그걸 가만두지 않지만요.'),
     ground: 0xeef4f7, tones: [0xdde8ee, 0xffffff], soil: 0xb8c4cc, sky: 0xdfeaf2, skyTop: 0x8fb8dc, bg: ['#c7dcee', '#f7fbff'],
     light: { sky: 0xffffff, ground: 0xb8c8d8, hemi: 2.7, sun: 2.4, sunColor: 0xf0f6ff, fog: [40, 140] },
     air: { colors: [0xffffff], n: 220, fall: 1.6, drift: 0.8, size: 0.07 },
     hill: { side: [0x8a949c, 0x7a8a94], top: 0xffffff }, pad: [0x6b4a2f, 0xd9523a], wall: 0x6b4a2f, far: { kind: 'cone', colors: [0xffffff, 0xc7d6e4, 0xa9bccf], h: [26, 62], w: [26, 52] },
     props: [[0.34, pine], [0.2, rock(0xaab4bc)], [0.1, snowman], [0.12, stoneLantern], [0.1, bucket], [0.14, tuft(0xcfe0c9)]],
-    tag: '온천', bosses: bosses('눈사람 장군', ['volley', 'slam'], '감기 대장', '눈원숭이 왕'),
+    tag: t('온천'), bosses: bosses(t('눈사람 장군'), ['volley', 'slam'], t('감기 대장'), t('눈원숭이 왕')),
     zombies: [
-      z('목욕 좀비', 'basic', { skin: 0xa8d8c0, shirt: 0xfff1d6, pants: 0xfff1d6, acc: 'towel' }),
-      z('스키 러너', 'runner', { skin: 0xb8e8d0, shirt: 0xe03131, pants: 0x3b5bdb, acc: 'beanie', capCol: 0xffd43b }),
-      z('눈사람 좀비', 'tank', { skin: 0xffffff, shirt: 0xffffff, pants: 0xe8eef2, acc: 'snow' }),
-      z('온천달걀 좀비', 'bomber', { skin: 0xf2e6d0, shirt: 0xd9a05b, pants: 0x8a6a45 }),
-      z('감기 좀비', 'spitter', { skin: 0xc8e0b8, shirt: 0x8ecae6, pants: 0x495057, acc: 'beanie', capCol: 0x8ecae6 }),
-      z('눈원숭이 좀비', 'leaper', { skin: 0xd9a08a, shirt: 0x9a8f80, pants: 0x8a7a6a, acc: 'ears', earCol: 0x9a8f80 }),
+      z(t('목욕 좀비'), 'basic', { skin: 0xa8d8c0, shirt: 0xfff1d6, pants: 0xfff1d6, acc: 'towel' }),
+      z(t('스키 러너'), 'runner', { skin: 0xb8e8d0, shirt: 0xe03131, pants: 0x3b5bdb, acc: 'beanie', capCol: 0xffd43b }),
+      z(t('눈사람 좀비'), 'tank', { skin: 0xffffff, shirt: 0xffffff, pants: 0xe8eef2, acc: 'snow' }),
+      z(t('온천달걀 좀비'), 'bomber', { skin: 0xf2e6d0, shirt: 0xd9a05b, pants: 0x8a6a45 }),
+      z(t('감기 좀비'), 'spitter', { skin: 0xc8e0b8, shirt: 0x8ecae6, pants: 0x495057, acc: 'beanie', capCol: 0x8ecae6 }),
+      z(t('눈원숭이 좀비'), 'leaper', { skin: 0xd9a08a, shirt: 0x9a8f80, pants: 0x8a7a6a, acc: 'ears', earCol: 0x9a8f80 }),
     ],
     build({ g, A, solid, spots, pool }) {
       spots(12, 9, (x, zz) => { // 노천탕: 들어가 있으면 체력이 찬다
@@ -341,20 +342,20 @@ export const MAPS = [
         solid(x, zz, 7, 2.4, 1.2, 0x8a6a45, 0xffffff); [-3.2, 3.2].forEach(o => { add(g, box(0.2, 1, 2.6, 0xd9523a), x + o, 1.7, zz); });
       });
     } },
-  { id: 'grave', name: '달빛 묘지', blurb: '달이 뜨면 묘비 사이로 해골과 박쥐, 늑대인간이 기어 나옵니다.',
+  { id: 'grave', name: t('달빛 묘지'), blurb: t('달이 뜨면 묘비 사이로 해골과 박쥐, 늑대인간이 기어 나옵니다.'),
     ground: 0x4f6152, tones: [0x44554a, 0x5b6f5c], soil: 0x2e3a33, sky: 0x39407a, skyTop: 0x0e1233, bg: ['#151a44', '#5a5fa8'], night: true,
     light: { sky: 0x8fa4ff, ground: 0x2a3340, hemi: 1.5, sun: 2.0, sunColor: 0xb4c8ff, fog: [30, 120] },
     air: { colors: [0xd6ff8a, 0xfff3a0], n: 120, fall: -0.15, drift: 0.5, size: 0.07, glow: true },
     hill: { side: [0x4a4a5a, 0x3f4352], top: 0x566a58 }, pad: [0x3a3a4a, 0xb6f09c], wall: 0x30323e, far: { kind: 'cone', colors: [0x2a2f55, 0x343a66, 0x23284a], h: [14, 40], w: [16, 40] },
     props: [[0.26, tomb], [0.12, cross], [0.16, deadTree], [0.12, jackLantern], [0.1, graveLamp], [0.14, tuft(0x3f5a45)], [0.1, bones]],
-    tag: '묘지', bosses: bosses('프랑켄 박사', ['slam', 'summon', 'mortar'], '대마녀', '늑대인간 군주'),
+    tag: t('묘지'), bosses: bosses(t('프랑켄 박사'), ['slam', 'summon', 'mortar'], t('대마녀'), t('늑대인간 군주')),
     zombies: [
-      z('해골 좀비', 'basic', { skin: 0xf0ecdc, shirt: 0xe4dfcc, pants: 0xd6d0bc, noHands: 1 }),
-      z('박쥐 좀비', 'runner', { skin: 0x9a7fc9, shirt: 0x4a3a66, pants: 0x3a2f55, acc: 'wings' }),
-      z('프랑켄 좀비', 'tank', { skin: 0x86b88a, shirt: 0x3a3a4a, pants: 0x2a2a35, acc: 'bolts' }),
-      z('도깨비불 좀비', 'bomber', { skin: 0x9be3ff, shirt: 0x5ab0e0, pants: 0x3a7ab0 }),
-      z('마녀 좀비', 'spitter', { skin: 0x9fd18a, shirt: 0x4a2f66, pants: 0x2f2244, acc: 'witch' }),
-      z('늑대인간 좀비', 'leaper', { skin: 0x8a6a55, shirt: 0x5a4a40, pants: 0x3f4a66, acc: 'ears', earCol: 0x6b4f3f }),
+      z(t('해골 좀비'), 'basic', { skin: 0xf0ecdc, shirt: 0xe4dfcc, pants: 0xd6d0bc, noHands: 1 }),
+      z(t('박쥐 좀비'), 'runner', { skin: 0x9a7fc9, shirt: 0x4a3a66, pants: 0x3a2f55, acc: 'wings' }),
+      z(t('프랑켄 좀비'), 'tank', { skin: 0x86b88a, shirt: 0x3a3a4a, pants: 0x2a2a35, acc: 'bolts' }),
+      z(t('도깨비불 좀비'), 'bomber', { skin: 0x9be3ff, shirt: 0x5ab0e0, pants: 0x3a7ab0 }),
+      z(t('마녀 좀비'), 'spitter', { skin: 0x9fd18a, shirt: 0x4a2f66, pants: 0x2f2244, acc: 'witch' }),
+      z(t('늑대인간 좀비'), 'leaper', { skin: 0x8a6a55, shirt: 0x5a4a40, pants: 0x3f4a66, acc: 'ears', earCol: 0x6b4f3f }),
     ],
     build({ g, A, solid, spots }) {
       spots(5, 14, (x, zz) => { // 예배당

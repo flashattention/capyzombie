@@ -110,3 +110,11 @@ kbd.wide{min-width:4.6em}
   .arms .state{justify-content:flex-start;border-bottom:1.5px solid var(--line);padding-bottom:1em}
 }
 @media (prefers-reduced-motion: reduce){ .stage,.map{transition:none} }
+
+/* ── 다국어 ── */
+html:lang(ja){--display:"Hiragino Maru Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic",sans-serif;--body:"Hiragino Sans","Noto Sans JP","Noto Sans CJK JP","Yu Gothic",system-ui,sans-serif}
+html:lang(zh-CN){--display:"PingFang SC","Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;--body:"PingFang SC","Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif}
+html:lang(en) body,html:lang(ja) body,html:lang(zh-CN) body{word-break:normal}
+html:lang(en) h1{font-size:clamp(3rem,6vw,7.4rem)}
+.langpick{display:inline-flex;gap:.6em;align-items:center;margin-top:1rem;font-size:.9rem;color:var(--muted)}
+.langpick select{font:500 .95rem var(--body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:.6em;padding:.3em .7em}

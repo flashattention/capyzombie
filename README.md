@@ -24,7 +24,7 @@
 
 처음 시작할 때 닉네임(2~12자)을 반드시 정해야 합니다. 닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고 전체 랭킹에 표시됩니다.
 
-터치 기기에서는 화면 왼쪽을 끌어 이동하고 오른쪽을 끌어 조준·사격하지만, 로켓과 Q·E·R 스킬 버튼은 아직 없습니다.
+터치 기기(휴대폰·태블릿, 모바일 앱)에서는 화면 왼쪽을 끌어 이동(끝까지 밀면 돌진)하고 오른쪽을 끌어 조준·사격합니다. 오른쪽 아래 버튼으로 로켓·발 구르기·미끼 귤·미사일 난사·B2 폭격·점프(누르고 있으면 제트팩)·시점 전환을 씁니다. 쏘는 동안 조준선 근처 좀비 쪽으로 시선을 살짝 끌어 주는 "터치 조준 보조"는 설정에서 끌 수 있습니다.
 
 ## 게임 구성
 
@@ -52,6 +52,32 @@
 - **칭호 61개**: 메달 수, 특정 업적, 전체 랭킹 순위(십걸·삼대장·전설)로 얻습니다. 고른 칭호는 게임 화면과 랭킹에서 닉네임 앞에 표시됩니다.
 - **체력 물약**: 맵 곳곳에 주기적으로 생기고(최대 5개), 닿으면 최대 체력의 35%를 회복합니다. 레이더에 분홍 점으로 보입니다.
 - **저장 유지**: 진행도는 브라우저에 저장되고 업데이트해도 초기화되지 않습니다. 저장 형식 규칙은 `src/save.js` 맨 위에 있습니다.
+
+## 다국어
+
+한국어·영어·일본어·중국어(간체)를 지원합니다. 처음에는 기기 언어를 따르고(지원하지 않는 언어는 영어), 선택창의 설정과 랜딩페이지에서 바꿀 수 있습니다.
+
+- 코드의 화면 문구는 `t('한국어 원문', { 자리표시자 })`로 감쌉니다(`src/i18n.js`). HTML에 직접 적힌 문구는 불러올 때 자동으로 번역됩니다.
+- 번역은 `src/locales/en.json`, `ja.json`, `zh-CN.json`에 `{ "한국어 원문": "번역" }`으로 둡니다.
+- 문구를 추가하거나 고친 뒤에는 `npm run i18n`으로 빠진 번역과 `{자리표시자}` 불일치를 확인합니다. `npm run i18n -- --keys`는 전체 키 목록(`src/locales/_keys.json`)을 다시 만듭니다.
+- 좀비 역할 이름(기본·러너 등)은 저장 데이터의 키라서 원문 그대로 두고, 화면에 보일 때만 `t(role)`로 번역합니다.
+- 랭킹에는 칭호 id도 함께 저장해, 보는 사람의 언어로 칭호를 보여 줍니다.
+
+## 모바일 앱 (Android, Capacitor)
+
+`android/`는 Capacitor로 감싼 안드로이드 프로젝트입니다. 앱은 게임 페이지(`play.html`)만 담고, 가로 화면 고정·전체 화면·화면 꺼짐 방지·뒤로 가기(메뉴 열기/닫기)·백그라운드 전환 시 일시정지를 처리합니다.
+
+```bash
+npm run cap:sync   # 앱용 빌드(dist-app/) 후 android/ 에 복사
+npm run cap:open   # Android Studio로 열기 (실기기 실행, 서명된 AAB 만들기)
+```
+
+- 앱에서 랭킹을 쓰려면 `.env.app`의 `VITE_API_BASE`에 웹 배포 주소를 넣고 다시 `npm run cap:sync` 합니다. API는 CORS를 허용합니다.
+- 그래픽 품질(낮음·보통·높음)은 설정에서 고르며, 터치 기기는 기본이 "보통"입니다.
+- 앱 아이콘·스플래시 원본은 `assets/`에 있고 `npx capacitor-assets generate --android`로 다시 만듭니다.
+- 출시 서명: 업로드 키(.jks)를 만들고 `android/keystore.properties`(형식은 `android/app/build.gradle` 맨 위 주석)를 두면 `./gradlew bundleRelease`가 서명된 AAB를 만듭니다. 키와 이 파일은 깃에 올리지 않습니다.
+- 패키지 이름은 `com.jellybeardreams.capyzombie`입니다. 플레이스토어에 처음 올린 뒤에는 바꿀 수 없습니다.
+- 버전을 올릴 때는 `android/app/build.gradle`의 `versionCode`(매번 +1)와 `versionName`을 바꿉니다.
 
 기획 의도와 수치는 [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)에 있습니다.
 
@@ -143,4 +169,4 @@ concepts/
 
 ## 기술
 
-[three.js](https://threejs.org/) 0.160, [Vite](https://vitejs.dev/) 5. 글꼴은 Google Fonts의 Jua와 IBM Plex Sans KR입니다.
+[three.js](https://threejs.org/) 0.160, [Vite](https://vitejs.dev/) 5. 글꼴은 Jua와 IBM Plex Sans KR(@fontsource로 함께 묶어 오프라인에서도 표시)이고, 일본어·중국어는 기기 글꼴을 씁니다. 모바일 앱은 [Capacitor](https://capacitorjs.com/) 8입니다.
