@@ -592,5 +592,7 @@
  "한 번에 쏘는 탄이 2발 늘고, 탄이 좀비를 끝없이 꿰뚫습니다.": "Fire 2 more bullets per shot, and bullets pierce endlessly.",
  "합성": "Fusion",
  "후반 장비": "Late-Game Gear",
- "{tag} {name}": "{tag} {name}"
+ "{tag} {name}": "{tag} {name}",
+ "개인정보처리방침": "Privacy Policy",
+ "랭킹 ID: {id}": "Leaderboard ID: {id}"
 }

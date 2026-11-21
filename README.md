@@ -79,6 +79,10 @@ npm run cap:open   # Android Studio로 열기 (실기기 실행, 서명된 AAB �
 - 패키지 이름은 `com.jellybeardreams.capyzombie`입니다. 플레이스토어에 처음 올린 뒤에는 바꿀 수 없습니다.
 - 버전을 올릴 때는 `android/app/build.gradle`의 `versionCode`(매번 +1)와 `versionName`을 바꿉니다.
 
+## 개인정보처리방침
+
+`privacy.html`(한국어·영어·일본어·중국어)에 있고, 웹은 `/privacy.html`, 앱은 설정 화면 맨 아래 링크로 엽니다. 같은 자리에 기록 삭제 요청에 쓰는 랭킹 ID가 보입니다. Play Console의 개인정보처리방침 URL에는 `https://<배포 주소>/privacy.html`을 넣습니다. 서버로 보내는 항목이나 사용하는 외부 서비스가 바뀌면 이 페이지와 Play Console의 데이터 보안 양식도 함께 고칩니다.
+
 기획 의도와 수치는 [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)에 있습니다.
 
 ## 개발

@@ -81,6 +81,7 @@ export function createSelect(renderer, onStart) {
   // ── UI ──
   const root = $('select'); root.hidden = false; $('rankboard').hidden = false;
   const nameEl = $('name'), msgEl = $('nick-msg'), goEl = $('go'); nameEl.value = account.nick;
+  $('rank-id').textContent = t('랭킹 ID: {id}', { id: account.id }); // 기록 삭제를 요청할 때 쓴다
   const NICK_HELP = t('닉네임은 계정에 저장되어 캐릭터를 바꿔도 그대로이고, 전체 랭킹에 표시됩니다.');
   function checkNick(warn) {
     const ok = validNick(nameEl.value);
