@@ -291,3 +291,15 @@ body.touch .skill .cnt{display:grid;place-items:center;position:absolute;right:-
 /* 터치 버튼의 대기 시간: 원형으로 줄어드는 그늘. 배지가 잘리지 않게 버튼 밖으로 넘치게 둔다 */
 body.touch .skill{overflow:visible}
 body.touch .skill::after{inset:0;height:auto;border-radius:50%;background:conic-gradient(rgba(58,42,28,.6) var(--wait),transparent 0)}
+
+/* ── 터치 버튼 배치 v2: 조준할 자리를 넓히려고 오른쪽 끝 두 줄(폭 약 160px)에 몰아 둔다 ──
+   바깥 줄(점프 위): 미끼 · B2 · 시점 / 안쪽 줄(점프 왼쪽부터 위로): 로켓 · 발 구르기 · 미사일 난사 */
+body.touch .skill{width:54px;height:54px}
+body.touch .skill .ico{width:32px;height:32px}
+body.touch #sk-m2{right:108px;bottom:18px}
+body.touch #sk-q{right:108px;bottom:82px}
+body.touch #sk-r{right:108px;bottom:146px;width:54px;height:54px}
+body.touch #sk-e{right:32px;bottom:112px}
+body.touch #sk-b{right:32px;bottom:176px}
+.tbtn.small{right:calc(32px + env(safe-area-inset-right));bottom:calc(240px + env(safe-area-inset-bottom));width:54px;height:54px}
+.tbtn.small .ico{width:32px;height:32px}

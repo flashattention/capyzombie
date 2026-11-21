@@ -976,6 +976,7 @@ export function createGame(renderer, profile, onExit) {
   function sim(n, idle) {
     autoAim = !idle; fireHeld = rocketHeld = !idle;
     for (let i = 0; i < n && !over; i++) { if (paused) choose(0); else { if (!idle) want.q = want.e = want.r = want.b = true; step(1 / 60, time); } }
+    for (let k = 0; k < 20 && paused && !idle; k++) choose(0); // 마지막에 뜬 레벨업 카드도 골라 둔다
     autoAim = false; fireHeld = rocketHeld = false;
     return { level, levels, kills, hp: Math.round(P.hp), time: Math.round(time), bossKills, maxCombo, over };
   }

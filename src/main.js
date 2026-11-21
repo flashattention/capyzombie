@@ -82,6 +82,7 @@ if (/^(sim|retry|die)/.test(hash)) {
       res.buttons = [...document.querySelectorAll('#over button')].filter(b => !b.hidden).map(b => { const r = b.getBoundingClientRect(), el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return b.id + ':' + (el === b ? 'ok' : (el && (el.id || el.tagName))); });
     } else {
       res = run(+hash.replace(/\D/g, '') || 20);
+      if (hash.endsWith('lv')) mode.grant(9999); // 개발용: 진행한 뒤 레벨업 카드 화면 (#sim30lv)
       if (hash.startsWith('retry')) { document.getElementById('p-retry').click(); res = run(5); res.hud = !document.getElementById('hud').hidden; }
     }
     document.title = JSON.stringify(res);
